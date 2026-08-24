@@ -9,17 +9,18 @@
 
 | 项 | 值 |
 |---|---|
-| 所处阶段 | **阶段 0 · 当天看见 JSON**（第 1–2 周，约 10h） |
-| 本阶段目标 | ~~浏览器访问自己写的接口返回 JSON~~ ✅ · 能收一个 POST 的 body |
+| 所处阶段 | **阶段 0 · 学习流程自动化**（第 1–2 周，约 10h） |
+| 本阶段目标 | ~~浏览器访问自己写的接口返回 JSON~~ ✅ · 做出保存后自动验收并显示下一题的 Learning Playground v0 |
 | 连续天数 | 2 |
 | 累计投入 | 约 2h |
-| 下一个动作 | 决定 Boot 版本 → 写 `POST /api/campaigns` → 撞上 `Map` 的类型代价 → 改 `record` |
+| 下一个动作 | 先写任务状态机 → 设计 `learning-playground/tasks.json` → 实现终端版自动验收闭环 |
 
 **已建立的事实**（避免重复踩）：
 
 - 练手项目在 `daily/day01/demo/`，包名 `com.yellres.demo`，Spring Boot **4.1.0** + Java 21
 - Boot 4 的 web starter 叫 `spring-boot-starter-webmvc`，**不是**教程里的 `spring-boot-starter-web`
 - 正式主线项目 **stockai** 第 3 周（W3）新建，独立仓库、包名 `com.yellres.stockai`。现在的 `demo` 只是阶段 0 练手，不用搬
+- Day 2 先实现 Learning Playground v0：Node 文件监听 + 确定性验收 + 自动显示下一题；Codex CLI 智能点评后续再接
 
 ---
 
