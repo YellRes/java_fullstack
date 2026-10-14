@@ -1,0 +1,11 @@
+{
+  "id": "w2-create-report-request",
+  "instruction": "创建 ReportRequest record",
+  "target": "src/main/java/com/yellres/demo/dto/ReportRequest.java",
+  "contains": [
+    "public record ReportRequest",
+    "String stockCode",
+    "Integer year",
+    "Double revenue"
+  ]
+}
