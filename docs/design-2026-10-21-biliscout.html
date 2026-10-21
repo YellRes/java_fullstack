@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BiliScout 设计文档</title>
+<style>
+  :root {
+    --bg: #0f1419; --bg-card: #1a2128; --bg-code: #0a0e13;
+    --fg: #e5e9f0; --fg-dim: #8b95a3;
+    --accent: #a78bfa; --accent-warm: #f59e0b;
+    --green: #16a34a; --red: #e94e77; --blue: #61afef;
+    --border: #2d3a47;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    line-height: 1.7;
+  }
+  header {
+    background: linear-gradient(180deg, #1f2937 0%, #0f1419 100%);
+    padding: 36px 16px; text-align: center; border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    margin: 0; font-size: 26px; font-weight: 700;
+    background: linear-gradient(90deg, #a78bfa, #f59e0b);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  header p { margin: 8px 0 0; color: var(--fg-dim); font-size: 14px; }
+  nav.toc {
+    position: sticky; top: 0; background: var(--bg); z-index: 100;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    overflow-x: auto; white-space: nowrap;
+  }
+  nav.toc a { color: var(--fg-dim); text-decoration: none; margin-right: 18px; font-size: 13px; }
+  nav.toc a:hover { color: var(--accent); }
+  main { max-width: 960px; margin: 0 auto; padding: 16px; }
+  section {
+    margin: 28px 0; padding: 22px; background: var(--bg-card);
+    border-radius: 8px; border: 1px solid var(--border);
+  }
+  section h2 { margin: 0 0 12px; font-size: 21px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  section h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 50%; background: var(--accent);
+    color: #fff; font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+  section h2 .sub { font-size: 13px; font-weight: normal; color: var(--fg-dim); }
+  section h3 { font-size: 16px; color: var(--accent); margin: 22px 0 8px; }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  code, pre { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 13px; }
+  code { background: var(--bg-code); padding: 2px 6px; border-radius: 3px; color: #ffd479; }
+  pre {
+    background: var(--bg-code); padding: 14px; border-radius: 6px; overflow-x: auto;
+    color: #d8dee9; line-height: 1.5; border: 1px solid var(--border);
+  }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th, td { padding: 8px 11px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--bg-code); color: var(--accent); font-weight: 600; white-space: nowrap; }
+  .insight, .pitfall, .warmbox {
+    padding: 12px 16px; margin: 16px 0; font-size: 14px; border-radius: 0 4px 4px 0;
+  }
+  .insight { background: rgba(167,139,250,0.08); border-left: 3px solid var(--accent); }
+  .insight strong { color: var(--accent); }
+  .pitfall { background: rgba(233,78,119,0.08); border-left: 3px solid var(--red); }
+  .pitfall strong { color: var(--red); }
+  .warmbox { background: rgba(245,158,11,0.08); border-left: 3px solid var(--accent-warm); }
+  .warmbox strong { color: var(--accent-warm); }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+  .tag.you { background: rgba(22,163,74,0.2); color: #4ade80; }
+  .tag.me { background: rgba(245,158,11,0.18); color: var(--accent-warm); }
+  .tag.must { background: rgba(245,158,11,0.18); color: var(--accent-warm); }
+  .tag.cut { background: rgba(139,149,163,0.18); color: var(--fg-dim); }
+  .arch { display: flex; flex-direction: column; margin: 18px 0; }
+  .arch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .arch-node {
+    background: var(--bg-code); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 6px; padding: 11px 14px; font-size: 13px; flex: 1; min-width: 190px;
+  }
+  .arch-node b { display: block; color: var(--fg); font-size: 14px; margin-bottom: 3px; }
+  .arch-node span { color: var(--fg-dim); font-size: 12px; }
+  .arch-node.java { border-left-color: var(--accent-warm); }
+  .arch-node.fe { border-left-color: var(--blue); }
+  .arch-node.ext { border-left-color: var(--red); }
+  .arch-node.db { border-left-color: var(--green); }
+  .arch-arrow { text-align: center; color: var(--fg-dim); font-size: 13px; padding: 6px 0; }
+  footer { text-align: center; color: var(--fg-dim); font-size: 12px; padding: 24px 16px 40px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔍 BiliScout · 设计文档</h1>
+  <p>输入一个问题 → 搜 B 站视频 → 去掉恰饭 → AI 总结成一份带出处的情报报告<br>
+  替换原主线项目 StockAI · 2026-10-21</p>
+</header>
+
+<nav class="toc">
+  <a href="#why">① 为什么做</a>
+  <a href="#goals">② 目标与边界</a>
+  <a href="#report">③ 报告长什么样</a>
+  <a href="#flow">④ 一次查询怎么跑</a>
+  <a href="#arch">⑤ 架构</a>
+  <a href="#bili">⑥ B 站采集</a>
+  <a href="#ad">⑦ 怎么判断恰饭</a>
+  <a href="#data">⑧ 数据模型</a>
+  <a href="#weeks">⑨ 26 周怎么对应</a>
+  <a href="#risk">⑩ 合规与风险</a>
+  <a href="#open">⑪ 留给实现时定</a>
+  <a href="#change">⑫ 仓库要改什么</a>
+</nav>
+
+<main>
+
+<p style="font-size:13px;color:var(--fg-dim)">
+  标记说明：<span class="tag you">你定的</span> 是对话里你明确说过的；
+  <span class="tag me">我的提议</span> 是我替你做的决定，看着不对就改。
+</p>
+
+<!-- ① -->
+<section id="why">
+  <h2><span class="num">1</span>为什么做</h2>
+  <p>
+    想买东西或做决定时（例：“什么枕头适合侧睡”），B 站上相关视频很多，但相当一部分是恰饭。
+    自己一个个点开看、分辨哪条是广告，很耗时间。
+    BiliScout 替你把这件事做完：搜视频、读字幕和评论、把广告筛掉、从真实分享里提炼结论，
+    每条结论都能点回原视频的那一秒去核实。<span class="tag you">你定的</span>
+  </p>
+  <p>它同时是你转 Java 全栈的主线练手项目，两个目的并重：<b>自己真能用</b> + <b>覆盖面试要聊的后端知识点</b>。<span class="tag you">你定的</span></p>
+  <div class="insight">
+    <strong>为什么它比 StockAI 更适合练手：</strong>
+    一次查询要几分钟，天然逼出“后台任务 + 状态机 + 进度推送”；
+    数据来自一个不稳定、会限流的外部网站，天然逼出“限速、重试、幂等”；
+    AI 要先判广告、再提观点、再汇总，天然逼出“多步 AI 流水线 + 结果落库 + 缓存”。
+    这些都是 StockAI 里需要刻意制造的场景，这里是业务本身就带的。
+  </div>
+</section>
+
+<!-- ② -->
+<section id="goals">
+  <h2><span class="num">2</span>目标与边界</h2>
+
+  <h3>要做到</h3>
+  <ul>
+    <li>输入一句自然语言问题，<b>5 分钟内</b>拿到报告（后台跑，页面看进度）。这是 W17 之后的目标：采集受限速约 3 分钟，AI 调用必须和采集同时进行、多个并发，不能一个接一个排队；W7–W16 的同步版本慢一些没关系 <span class="tag me">我的提议</span></li>
+    <li>每次分析<b>不少于 15 个</b>有字幕的视频（候选 30 个左右）<span class="tag me">我的提议</span></li>
+    <li>报告里每条结论都附<b>原视频 + 时间点</b>，点开直接跳到那一秒 <span class="tag me">我的提议，你认可了草稿</span></li>
+    <li>被判为广告的视频<b>不偷偷删掉</b>，单独列出并写明理由 <span class="tag me">同上</span></li>
+    <li>报告出来后能<b>继续追问</b>（例：“有人提到颈椎病吗”），回答同样带出处 <span class="tag me">我的提议</span></li>
+  </ul>
+
+  <h3>不做（这一版）</h3>
+  <ul>
+    <li><b>抖音、小红书</b>：只做 B 站 <span class="tag you">你定的</span></li>
+    <li><b>ESP32 + 手机采集</b>：跟本项目脱钩，作为独立的硬件学习项目 <span class="tag you">你定的</span></li>
+    <li><b>没字幕的视频</b>：直接跳过并计数，不下载音频转文字 <span class="tag me">我的提议</span></li>
+    <li>弹幕、多用户注册、实时出结果、商品比价 <span class="tag me">我的提议</span></li>
+  </ul>
+
+  <h3>做成这样就算失败（哪怕能跑）</h3>
+  <ul>
+    <li>报告写得很自信，但结论点不回任何视频，没法核实</li>
+    <li>广告判断是个黑箱：排除了什么、为什么排除，看不到</li>
+    <li>因为请求太猛把登录用的 B 站账号弄封了</li>
+    <li>时间全耗在研究 B 站接口和反爬上，Java 后端的知识点没练到</li>
+  </ul>
+
+  <h3>约束</h3>
+  <ul>
+    <li>每周约 6 小时（1h × 6 天），总共 26 周，W1–W2 已基本完成 —— 沿用原计划 <span class="tag you">原 README 定的</span></li>
+    <li>Spring Boot 4.1 + Java 21，沿用 <code>daily/day01/demo</code> 已验证的环境</li>
+    <li>主库 MySQL（面试主要问它）；AI 文字部分用 DeepSeek（便宜、中文好）—— 沿用原决策</li>
+    <li>不逆向小红书、抖音的签名；B 站只用社区已公开的 WBI 签名算法 <span class="tag you">你同意了</span></li>
+    <li><b>只在本地跑，不部署到公网</b>：只有你自己能发起查询，B 站小号不会被别人拿去刷，也不用担心 AI 费用被刷 <span class="tag you">你定的</span></li>
+    <li>阶段 0 的 Learning Playground <b>先不做</b>，W1–W2 视为完成，下一步直接进 W3 <span class="tag you">你定的</span></li>
+  </ul>
+</section>
+
+<!-- ③ -->
+<section id="report">
+  <h2><span class="num">3</span>报告长什么样</h2>
+  <p>对话里的草稿，你回复“可以”。以“什么枕头适合侧睡”为例：</p>
+<pre>【一句话结论】
+侧睡选高度 10～12cm、偏硬的乳胶或记忆棉枕，高度比材质更重要。
+
+【主流观点】（按提到的视频数排序）
+1. 高度要和肩宽匹配，太低脖子会歪 —— 9 个视频提到
+2. 乳胶枕支撑好但有味道，需要散味 —— 6 个视频
+3. 荞麦枕可调高度，但翻身有声音 —— 4 个视频
+
+【被多次点名的产品】
+· A 品牌某款：好评 5 / 差评 2，差评集中在“用久变塌”
+
+【反对意见和踩坑】
+· 有 3 个视频认为“侧睡专用枕”是营销概念……
+
+【去掉的广告】
+共搜到 30 个视频，排除 11 个：
+· 《xxx》—— 口播“本期由 xx 赞助”，并在简介挂了购买链接
+
+【来源】每条观点都能点到对应视频，跳到说这句话的时间点</pre>
+  <ul>
+    <li>头部还要显示：分析了几个视频、跳过几个（没字幕/判为广告）、数据采集时间</li>
+    <li>“疑似广告”的视频<b>保留参与总结</b>，但在来源里标黄，并在统计“提到的视频数”时单独计数 <span class="tag me">我的提议</span></li>
+    <li>评论区作为补充证据：某个产品在评论里被大量吐槽，也算进差评，并标明“来自评论” <span class="tag me">我的提议</span></li>
+    <li>报告里只放<b>摘要和链接</b>，不整段转载视频字幕 —— 版权上更稳 <span class="tag me">我的提议</span></li>
+  </ul>
+</section>
+
+<!-- ④ -->
+<section id="flow">
+  <h2><span class="num">4</span>一次查询怎么跑</h2>
+<pre>① 前端提交问题 → 后端建一条研究任务，立刻返回任务 id
+② 后台任务开跑，状态依次推进，前端实时看到进度：
+   排队 → 改写关键词 → 搜索 → 采集 → 判广告 → 提观点 → 汇总 → 完成
+                                                    ↘ 失败（记录原因，可重试）
+③ 改写关键词：AI 把问题改成 2～3 个 B 站搜索词（“侧睡 枕头 推荐”“侧睡 枕头 测评”）
+④ 搜索：每个词取前若干条，去重后得到约 30 个候选视频
+⑤ 采集（逐个、限速）：视频详情 → 字幕 → 热门评论；没字幕的记一笔“跳过”
+⑥ 判广告（每个视频一次 AI 调用）：输出 恰饭 / 疑似 / 真实分享 + 理由 + 证据
+⑦ 提观点（每个非恰饭视频一次 AI 调用）：针对用户的问题，抽出观点和产品评价，每条带时间点
+⑧ 汇总（一次 AI 调用）：把所有观点卡合并、归类、计数，生成报告
+⑨ 报告落库；之后可以追问（第 3 阶段做）</pre>
+  <div class="insight">
+    <strong>为什么分“提观点”和“汇总”两步：</strong>
+    30 个视频的字幕加起来远超一次 AI 调用能塞的长度。先对每个视频单独提炼成短短一张“观点卡”，
+    再把几十张卡合在一起总结，长度就压下来了。这个“先分后合”的做法本身就是一段能讲的 AI 工程经验。
+    <span class="tag me">我的提议</span>
+  </div>
+  <div class="warmbox">
+    <strong>能复用的结果要复用：</strong>
+    同一个视频再次被搜到时，详情、字幕、评论在一定天数内直接用库里的；
+    “判广告”跟用户问的问题无关，按（视频, prompt 版本）缓存；
+    “提观点”跟问题有关，按（视频, 问题, prompt 版本）缓存。<span class="tag me">我的提议</span>
+  </div>
+</section>
+
+<!-- ⑤ -->
+<section id="arch">
+  <h2><span class="num">5</span>架构</h2>
+  <p>只有一个 Java 服务。原来 StockAI 的“Python 采集服务”整个去掉 —— B 站接口用 Java 调完全够用，省下来的 2 周花在 Java 上。<span class="tag me">我的提议</span></p>
+  <div class="arch">
+    <div class="arch-row">
+      <div class="arch-node fe"><b>前端（Vue3）</b><span>提问 · 任务进度 · 报告页 · 追问</span></div>
+    </div>
+    <div class="arch-arrow">↓ REST + SSE（进度推送、追问流式回答）</div>
+    <div class="arch-row">
+      <div class="arch-node java"><b>biliscout（Spring Boot 4.1 / Java 21）</b>
+        <span>研究任务状态机 · 线程池 · B 站客户端（WBI 签名 + 限速 + 退避）· AI 流水线 · 缓存 · 对外 API</span></div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-row">
+      <div class="arch-node db"><b>MySQL</b><span>任务 / 视频 / 字幕 / 评论 / 判定 / 观点卡 / 报告 / AI 调用记录</span></div>
+      <div class="arch-node db"><b>Redis</b><span>热点缓存、限流计数</span></div>
+      <div class="arch-node db"><b>PostgreSQL + pgvector</b><span>只存字幕切块的向量，追问用（第 3 阶段加入）</span></div>
+    </div>
+    <div class="arch-arrow">↓ 外部依赖</div>
+    <div class="arch-row">
+      <div class="arch-node ext"><b>B 站网页接口</b><span>搜索 / 视频详情 / 字幕 / 评论</span></div>
+      <div class="arch-node ext"><b>DeepSeek</b><span>改写关键词、判广告、提观点、汇总、追问</span></div>
+      <div class="arch-node ext"><b>向量接口</b><span>阿里百炼或智谱，W19 定（沿用原待定项）</span></div>
+    </div>
+  </div>
+  <p>
+    采集部分写成一个接口（比如 <code>ContentSource</code>），B 站是它的第一个实现。
+    以后真想接 ESP32 手机采集，新增一个实现即可，主干不动。现阶段<b>只留接口，不为它做任何额外工作</b>。<span class="tag me">我的提议</span>
+  </p>
+</section>
+
+<!-- ⑥ -->
+<section id="bili">
+  <h2><span class="num">6</span>B 站采集</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>要拿的</th><th>对应网页里的请求（大致，动手时用 F12 核实）</th><th>备注</th></tr>
+    <tr><td>搜索结果</td><td><code>/x/web-interface/wbi/search/type</code></td><td>需要 WBI 签名</td></tr>
+    <tr><td>视频详情</td><td><code>/x/web-interface/view</code></td><td>标题、简介、标签、UP 主、时长、发布时间、内部编号</td></tr>
+    <tr><td>字幕</td><td><code>/x/player/wbi/v2</code> → 字幕文件地址</td><td>AI 自动字幕需要登录</td></tr>
+    <tr><td>热门评论</td><td><code>/x/v2/reply/wbi/main</code></td><td>含 UP 主置顶评论（判广告的重要线索）</td></tr>
+  </table>
+  </div>
+  <h3>四条硬规矩</h3>
+  <ul>
+    <li><b>签名单独一个类</b>（<code>WbiSigner</code>）：定期刷新密钥，所有请求发送前统一签名，像 axios 拦截器统一加 token。B 站改算法时只改这一处。</li>
+    <li><b>全局限速</b>：所有发往 B 站的请求排队，间隔 1–3 秒随机。一次查询 30 个视频 × 3 个请求 ≈ 90 次，约 3 分钟，在 5 分钟目标之内。</li>
+    <li><b>被拦就停</b>：返回 412 或类似风控信号时，退避等待；连续被拦则暂停整个采集并把任务标为失败，不硬冲。</li>
+    <li><b>登录信息不进 git</b>：用小号登录，<code>SESSDATA</code> 放环境变量或被 gitignore 的本地配置。</li>
+  </ul>
+  <div class="pitfall">
+    <strong>别陷进去：</strong>接口参数、要不要登录，B 站会不定期调整。这部分卡住超过 20 分钟就查社区文档或问 AI，
+    别花几天研究反爬 —— 那对你练 Java 没价值。
+  </div>
+</section>
+
+<!-- ⑦ -->
+<section id="ad">
+  <h2><span class="num">7</span>怎么判断恰饭</h2>
+  <p>你没有给出固定的判断标准，所以下面是我的提议，跑起来后按你抽查的结果调整。<span class="tag me">我的提议</span></p>
+  <div class="table-wrap">
+  <table>
+    <tr><th>线索</th><th>从哪看</th><th>分量</th></tr>
+    <tr><td>口播“本期由 xx 赞助 / 合作”</td><td>字幕</td><td>强</td></tr>
+    <tr><td>平台标注的商业推广（如果视频详情里有这个字段）</td><td>视频详情</td><td>强（动手时先核实有没有）</td></tr>
+    <tr><td>简介或 UP 主置顶评论挂购买链接、优惠码</td><td>简介、置顶评论</td><td>强</td></tr>
+    <tr><td>全片只讲一个品牌、只有优点没有缺点</td><td>字幕</td><td>中</td></tr>
+    <tr><td>评论区大量“恰饭”“广告”之类的吐槽</td><td>评论</td><td>中</td></tr>
+  </table>
+  </div>
+  <ul>
+    <li>输出三档：<b>恰饭</b>（排除）、<b>疑似</b>（保留但标黄）、<b>真实分享</b></li>
+    <li>每个判定都要带<b>理由</b>和<b>证据</b>（引用的那句话 + 时间点），没有证据就不能判“恰饭”</li>
+    <li>AI 必须按固定的 JSON 格式返回，后端校验格式，不合格就重试一次，再不行记为“判定失败”并当作“疑似”处理</li>
+  </ul>
+  <div class="insight">
+    <strong>怎么知道判得准不准：</strong>报告的“去掉的广告”列表就是你的抽查入口。
+    验收标准：随便抽 5 个被排除的视频，你认同至少 4 个。
+  </div>
+</section>
+
+<!-- ⑧ -->
+<section id="data">
+  <h2><span class="num">8</span>数据模型 <span class="sub">MySQL 9 张 + PostgreSQL 1 张，字段细节留给实现</span></h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>表</th><th>作用</th><th>要点</th></tr>
+    <tr><td><code>research_task</code></td><td>一次查询（问题、关键词、状态、进度、失败原因）</td><td>状态机的落地；可重试</td></tr>
+    <tr><td><code>video</code></td><td>视频基本信息</td><td>唯一索引 <code>bvid</code>，重复搜到就更新而不是重复插入（幂等）</td></tr>
+    <tr><td><code>video_subtitle</code></td><td>字幕，按句存，带起止时间</td><td>一个视频几百句 → 批量插入</td></tr>
+    <tr><td><code>video_comment</code></td><td>评论</td><td>⭐ 第 2 阶段慢查询的主角，见下</td></tr>
+    <tr><td><code>task_video</code></td><td>任务和视频的关联（一个视频可被多次查询用到）</td><td>记录这个视频在本次任务里是“采用 / 跳过 / 排除”</td></tr>
+    <tr><td><code>ad_verdict</code></td><td>判广告结果</td><td>唯一键（视频, prompt 版本）</td></tr>
+    <tr><td><code>video_insight</code></td><td>观点卡</td><td>唯一键（视频, 问题指纹, prompt 版本）</td></tr>
+    <tr><td><code>report</code></td><td>最终报告（结构化 JSON + 用到的视频）</td><td>必须落库，不能只放 Redis</td></tr>
+    <tr><td><code>llm_call</code></td><td>每次 AI 调用的记录</td><td>模型、prompt 版本、token 数、耗时、是否成功 —— 讲 AI 工程化的证据，也用来算钱</td></tr>
+    <tr><td><code>subtitle_chunk</code>（PG）</td><td>字幕切块 + 向量</td><td>追问时先按本次任务用到的视频过滤，再按相似度找</td></tr>
+  </table>
+  </div>
+  <div class="warmbox">
+    <strong>慢查询场景要靠造数据：</strong>StockAI 里有天然的 1000 万行日行情表，这里没有。
+    自己用的真实评论数据大概只有几万到几十万行，查起来不会慢。
+    所以第 2 阶段 W9 照原计划<b>自己造 1000 万行评论假数据</b>，再写真实会用到的查询
+    （比如“每个视频取点赞前 10 的评论”“某 UP 主所有视频的被判恰饭比例”）去复现慢查询。<span class="tag me">我的提议</span>
+  </div>
+</section>
+
+<!-- ⑨ -->
+<section id="weeks">
+  <h2><span class="num">9</span>26 周怎么对应 <span class="sub">保留原计划的节奏和面试考点，只换业务</span></h2>
+  <p>原则：StockAI 计划里每个“必做”的考点，在新项目里都找到对应位置；每周具体任务等这份设计确认后，再写进新的 PLAN.html。</p>
+  <div class="table-wrap">
+  <table>
+    <tr><th>周</th><th>内容</th><th>练到的考点</th><th></th></tr>
+    <tr><td colspan="4" style="color:var(--accent)">阶段 0 · 当天看见 JSON（不变）</td></tr>
+    <tr><td>W1–W2</td><td>环境 + GET + POST/DTO（已基本完成）</td><td>—</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td colspan="4" style="color:var(--accent)">阶段 1 · 打通一条完整链路</td></tr>
+    <tr><td>W3</td><td>新建 biliscout 项目 + Docker MySQL + <code>research_task</code> 增删改查</td><td>MyBatis-Plus、数据源</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W4</td><td>三层分层 + 统一响应 + 全局异常 + 参数校验</td><td>分层、异常设计</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W5</td><td>B 站客户端：搜索 + WBI 签名 + 全局限速</td><td>HTTP 客户端、请求拦截、外部配置</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W6</td><td>视频 / 字幕 / 评论入库</td><td>批量插入性能、幂等（唯一索引 + 存在即更新）、事务边界（评论存一半失败怎么办）</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W7</td><td>第一条完整链路（同步、无 AI）：给关键词 → 采集 30 个视频 → 入库</td><td>限速与退避重试、跳过逻辑</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W8</td><td>SQL 硬啃周：每视频点赞前 N 评论、UP 主统计、关键词命中聚合</td><td>多表 JOIN、窗口函数 <code>ROW_NUMBER()</code></td><td><span class="tag must">必做</span></td></tr>
+    <tr><td colspan="4" style="color:var(--accent)">阶段 2 · 业务复杂度逼出真问题</td></tr>
+    <tr><td>W9</td><td>造 1000 万行评论 + 复现慢查询</td><td>EXPLAIN、慢查询日志</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W10</td><td>索引优化，记录前后数据</td><td>联合索引、覆盖索引、索引失效 ⭐</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W11</td><td>接 DeepSeek：改写关键词 + 判广告 prompt v1</td><td>外部 API、prompt 版本化、JSON 结构化输出</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W12</td><td>AI 调用的工程问题：超时、重试、限流、格式校验、失败降级</td><td>外部依赖的稳定性</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W13</td><td>结果落库 + Redis 缓存（判定、观点卡按版本缓存）</td><td>缓存 key 设计、一致性、三大缓存问题</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W14</td><td>事务深入 + 亲手踩自调用失效</td><td>Spring 代理机制、隔离级别</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W15</td><td>JWT 登录</td><td>拦截器、ThreadLocal</td><td><span class="tag cut">可砍</span>（只在本地跑，不需要；砍了简历上就不写“鉴权”）</td></tr>
+    <tr><td>W16</td><td>定时任务：刷新过期视频数据、清理旧缓存</td><td><code>@Scheduled</code> 的局限</td><td><span class="tag cut">可砍</span></td></tr>
+    <tr><td colspan="4" style="color:var(--accent)">阶段 3 · 异步 · 报告 · 追问 · 上线</td></tr>
+    <tr><td>W17</td><td>研究任务改成后台跑：状态机 + 自定义线程池 + SSE 推进度；采集一个视频就立刻交给 AI 判广告，AI 调用同时跑（限 3–5 个并发）</td><td>线程池七参数、状态机、同一问题不重复跑、生产者/消费者</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W18</td><td>提观点 + 汇总成报告（先分后合）+ 时间点引用 + 广告排除清单</td><td>多步 AI 流水线、长文本处理 —— 产品核心</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W19</td><td>字幕切块 + 向量化（PG + pgvector）</td><td>跨库一致性、并行调用</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W20</td><td>追问：检索 + 流式回答 + 引用时间点</td><td>RAG、压住 AI 编造</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W21</td><td>测试补齐（Mock 掉 B 站和 AI，测试不花钱、不发真请求）</td><td>JUnit 5、MockMvc</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W22</td><td>前端：提问页、进度页、报告页、追问</td><td>你的主场，求快</td><td><span class="tag cut">可砍成极简</span></td></tr>
+    <tr><td>W23</td><td>容器化编排</td><td>多阶段构建、compose</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W24</td><td>本地一键启动：一条命令起全套 + 配置分环境 + 演示数据（几个问题的报告提前生成好）+ 录一段演示视频代替公网链接</td><td>配置外部化、数据持久化</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W25</td><td>压测 + 一次真实排查</td><td>jstack / arthas ⭐</td><td><span class="tag must">必做</span></td></tr>
+    <tr><td>W26</td><td>收尾复盘</td><td>“如果重做会怎么改”</td><td><span class="tag must">必做</span></td></tr>
+  </table>
+  </div>
+  <div class="insight">
+    <strong>什么时候开始自己能用：</strong>W18 结束时整条链路就通了（后台跑、出报告），哪怕前端还很简陋。
+    比 StockAI 的“W20 才看到 AI 问答”早。
+  </div>
+</section>
+
+<!-- ⑩ -->
+<section id="risk">
+  <h2><span class="num">10</span>合规与风险</h2>
+  <ol>
+    <li><b>这是违反 B 站用户协议的自动化访问</b>，即使不破解任何东西。守住：个人自用、低频、用小号、不对外分发采集到的内容。</li>
+    <li><b>只用公开的 WBI 签名，不逆向任何平台的防护</b>；不碰小红书、抖音。</li>
+    <li><b>限速 1–3 秒，被拦就停</b>，不并发、不硬冲。</li>
+    <li><b>密钥和登录信息不进 git</b>：DeepSeek Key、向量接口 Key、<code>SESSDATA</code> 都走环境变量或被 gitignore 的本地配置。</li>
+    <li><b>报告只放摘要和链接</b>，不整段转载字幕内容。</li>
+    <li><b>AI 费用设上限</b>：一次查询约 30 次以上 AI 调用，靠缓存和 <code>llm_call</code> 记录盯住花费；DeepSeek 后台设消费上限。</li>
+    <li>原来的“不输出投资建议”红线不再适用；换成：报告只总结视频里的说法，<b>不替用户做购买决定</b>，页面注明“内容来自 B 站用户分享，不代表事实”。</li>
+  </ol>
+</section>
+
+<!-- ⑪ -->
+<section id="open">
+  <h2><span class="num">11</span>留给实现时定</h2>
+  <ul>
+    <li>具体 prompt 内容、观点卡的 JSON 字段、候选视频的过滤条件（发布时间、时长）</li>
+    <li>字幕按句存还是整段 JSON 存（W6 时对比后决定，写下理由）</li>
+    <li>视频数据多少天算过期需要重新采集</li>
+    <li>“问题指纹”怎么算（原文哈希，还是 AI 改写后的关键词）</li>
+    <li>向量接口选哪家（W19 定）</li>
+    <li>项目名 BiliScout、包名 <code>com.yellres.biliscout</code> 是我起的，随时可改 <span class="tag me">我的提议</span></li>
+  </ul>
+</section>
+
+<!-- ⑫ -->
+<section id="change">
+  <h2><span class="num">12</span>仓库要改什么</h2>
+  <ul>
+    <li><b>README.md</b>：主线项目一节换成 BiliScout；已定决策表、三条红线、当前状态里提到 StockAI 的地方全部更新；“当前状态”改成阶段 1 · W3，“下一个动作”改成新建 biliscout 项目 + Docker 起 MySQL；阶段 0 的 Learning Playground 标为“暂缓”</li>
+    <li><b>PLAN.html</b>：按 ⑨ 的周对应重写，保留原来的交互（可勾选进度、本机保存）。勾选进度换一个新的保存 key，避免和旧计划混在一起</li>
+    <li><b>旧 StockAI 计划</b>：移到 <code>docs/archive/PLAN-stockai.html</code> 留档，不删 <span class="tag me">我的提议</span></li>
+    <li><code>daily/day01/demo</code> 不动；W3 新建的正式项目从 <code>stockai/</code> 改为 <code>biliscout/</code>：放在本仓库下的 <code>biliscout/</code> 目录，但它是<b>独立的 git 仓库</b>，学习仓库的 <code>.gitignore</code> 忽略这个目录；密钥和登录信息的忽略规则写在 biliscout 自己的 <code>.gitignore</code> 里 <span class="tag me">我的提议，沿用原 README 的做法</span></li>
+  </ul>
+</section>
+
+</main>
+<footer>BiliScout 设计文档 · 2026-10-21 · 确认后再改 README 和 PLAN.html</footer>
+</body>
+</html>

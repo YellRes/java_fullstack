@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>StockAI 项目计划 · 26 周</title>
+<title>BiliScout 项目计划</title>
 <style>
   :root {
     --bg: #0f1419;
@@ -187,14 +187,14 @@
 <body>
 
 <header>
-  <h1>📈 StockAI · 项目设计 + 26 周执行计划</h1>
-  <p>A 股财报采集 → 指标计算 → AI 解读 + 年报问答（RAG）　·　Python 采集 + Java 业务 + Vue 前端</p>
+  <h1>🔍 BiliScout · 项目设计 + 26 周执行计划</h1>
+  <p>输入一个问题 → 搜 B 站视频 → 去掉恰饭 → AI 总结成带出处的情报报告　·　Java 一个服务 + Vue 前端 · 只在本地跑</p>
 </header>
 
 <nav class="toc">
   <a href="#decided">① 已定的决策</a>
   <a href="#arch">② 架构</a>
-  <a href="#comm">③ 两个服务怎么通信</a>
+  <a href="#flow">③ 一次查询怎么跑</a>
   <a href="#model">④ 数据模型</a>
   <a href="#weeks">⑤ 26 周计划</a>
   <a href="#cut">⑥ 做不完怎么砍</a>
@@ -205,252 +205,131 @@
 
 <!-- ============================================ -->
 <section id="decided">
-  <h2><span class="num">1</span>已定的决策<span class="sub">— 2026-08-13 确认，10-14 补充 RAG</span></h2>
+  <h2><span class="num">1</span>已定的决策<span class="sub">— 2026-10-21 由 StockAI 改为 BiliScout</span></h2>
 
   <div class="dec-grid">
-    <div class="dec-card ok"><b>✅ AI 问答：指标 + 年报 RAG（10-14）</b><span>数字类问题走结构化数据（准）；文字类问题（经营情况、风险、管理层说法）走年报 PDF 检索问答</span></div>
-    <div class="dec-card ok"><b>✅ 向量存储：PostgreSQL + pgvector（10-14）</b><span>MySQL 仍是主库；PG 只存文本块和向量，W18 才加进来</span></div>
-    <div class="dec-card ok"><b>✅ PDF 由 Java 下载解析（10-14）</b><span>巨潮资讯网查公告接口拿 PDF 链接，PDFBox 解析。Python 仍只负责结构化数据，2 周上限不变</span></div>
-    <div class="dec-card warn"><b>⏳ 待定：向量接口</b><span>W19 定。倾向用接口（阿里百炼/智谱），便宜云服务器跑不动本地模型。DeepSeek 没有这个接口</span></div>
-    <div class="dec-card ok"><b>✅ AI 模型：DeepSeek API</b><span>OpenAI 兼容接口，Java 直接调。整个项目 AI 成本预计 &lt; 50 元</span></div>
-    <div class="dec-card ok"><b>✅ 数据采集：Python 爬虫服务</b><span>独立服务，Python 生态做采集清洗。变成双服务架构</span></div>
-    <div class="dec-card ok"><b>✅ MVP 范围：只做财报解读</b><span>同步财报 → 存 → 算指标 → AI 解读 → 看板。不做自选股/回测</span></div>
-    <div class="dec-card warn"><b>⏳ 待定：Spring Boot 版本</b><span>4.1.0 还是降 3.x —— 第 2 天的任务 ①。降 3.x 的理由是资料密度</span></div>
+    <div class="dec-card ok"><b>✅ 只做 B 站</b><span>不做抖音、小红书。B 站有字幕和评论接口，签名算法社区已公开，不用逆向任何防护</span></div>
+    <div class="dec-card ok"><b>✅ 只在本地跑</b><span>不部署公网：只有自己能发起查询，B 站小号和 AI 费用都不会被别人刷</span></div>
+    <div class="dec-card ok"><b>✅ 单个 Java 服务</b><span>去掉原来的 Python 采集服务，B 站接口用 Java 直接调。省下的 2 周花在 Java 上</span></div>
+    <div class="dec-card ok"><b>✅ AI 模型：DeepSeek API</b><span>改写关键词、判恰饭、提观点、汇总、追问。OpenAI 兼容接口，Java 直接调</span></div>
+    <div class="dec-card ok"><b>✅ 主库 MySQL + 向量 PG</b><span>MySQL 存业务数据（面试主要问它）；PostgreSQL + pgvector 只存字幕切块的向量，W19 才加</span></div>
+    <div class="dec-card ok"><b>✅ 报告必须带出处</b><span>每条结论附原视频 + 时间点；被判恰饭的视频列出来并写理由，不偷偷删</span></div>
+    <div class="dec-card ok"><b>✅ 跳过没字幕的视频</b><span>不下载音频转文字，只计数。复杂度高，对练 Java 没帮助</span></div>
+    <div class="dec-card ok"><b>✅ Learning Playground 暂缓</b><span>W1–W2 视为完成，直接进 W3</span></div>
+    <div class="dec-card warn"><b>⏳ 待定：向量接口</b><span>W19 定，阿里百炼或智谱。DeepSeek 没有这个接口</span></div>
   </div>
 
-  <h3>MVP 只做这 8 个指标（别扩）</h3>
-  <p>财报科目多达几百个，且不同行业口径不同、合并/母公司报表有差异。<strong>陷进财务领域知识里会吃掉几十小时却学不到后端技术。</strong>锁定这 8 个：</p>
-  <table>
-    <thead><tr><th>指标</th><th>来源</th><th>为什么选它</th></tr></thead>
-    <tbody>
-      <tr><td>营业收入 / 净利润</td><td>直接取</td><td>规模和盈利的基本盘</td></tr>
-      <tr><td>毛利率</td><td>算：(营收−成本)/营收</td><td>需要衍生计算 → 引出"算在 SQL 还是 Java"的决策</td></tr>
-      <tr><td>ROE</td><td>算：净利润/净资产</td><td>同上，且需要跨表取数</td></tr>
-      <tr><td>资产负债率</td><td>算：总负债/总资产</td><td>风险维度，AI 解读的重点</td></tr>
-      <tr><td>经营现金流</td><td>直接取</td><td>和净利润对比能看出"赚的是不是真钱"，AI 有话讲</td></tr>
-      <tr><td>营收/净利同比增速</td><td>算：需要取上年同期 → <strong>自连接或窗口函数</strong></td><td>这一项会逼你写真正复杂的 SQL</td></tr>
-    </tbody>
-  </table>
   <div class="insight">
-    <strong>最后一项是故意留的。</strong>"同比增速"要拿当期和上年同期比，SQL 上要么自连接、要么用窗口函数 <code>LAG()</code>。
-    这是把你从"会写 CRUD"推到"会写业务 SQL"的那道台阶，也是阶段 1 最值得花时间的一处。
+    <strong>为什么换掉 StockAI：</strong>一次查询要跑几分钟，天然逼出“后台任务 + 状态机 + 进度推送”；
+    数据来自会限流的外部网站，天然逼出“限速、重试、幂等”；AI 要先判恰饭、再提观点、再汇总，天然逼出“多步 AI 流水线 + 落库 + 缓存”。
+    这些在 StockAI 里要刻意制造，在这里是业务自带的。而且做出来自己真能用。
   </div>
+
+  <p style="font-size:13px;color:var(--fg-dim)">完整设计（目标与边界、报告样例、判恰饭的线索）见 <code>docs/design-2026-10-21-biliscout.html</code>；旧的 StockAI 计划留档在 <code>docs/archive/PLAN-stockai.html</code>。</p>
 </section>
 
 <!-- ============================================ -->
 <section id="arch">
   <h2><span class="num">2</span>架构</h2>
-
   <div class="arch">
     <div class="arch-row">
-      <div class="arch-node ext"><b>数据源①：结构化财报</b><span>东财/新浪公开 JSON 接口，或 akshare 库封装好的数据</span></div>
-      <div class="arch-node ext"><b>数据源②：年报 PDF</b><span>巨潮资讯网公告查询接口 → PDF 链接。由 Java 直接下载（不经 Python）</span></div>
+      <div class="arch-node fe"><b>前端（Vue3）</b><span>提问 · 任务进度 · 报告页 · 追问。W22 做，你的主场</span></div>
     </div>
-    <div class="arch-arrow">↓ ① Python requests / akshare　　② Java 后台任务下载</div>
+    <div class="arch-arrow">↓ REST + SSE（进度推送、追问流式回答）</div>
     <div class="arch-row">
-      <div class="arch-node py">
-        <b>scraper（Python 服务）</b>
-        <span>职责：<strong>只负责采集和清洗</strong>。产出规范化的 JSON。不碰数据库、不做业务逻辑</span>
-      </div>
+      <div class="arch-node java"><b>biliscout（Spring Boot 4.1 / Java 21）</b>
+        <span>研究任务状态机 · 线程池 · B 站客户端（WBI 签名 + 全局限速 + 退避）· AI 流水线 · 缓存 · 对外 API</span></div>
     </div>
-    <div class="arch-arrow">↓ HTTP POST 批量上报（见第 3 节）</div>
+    <div class="arch-arrow">↓</div>
     <div class="arch-row">
-      <div class="arch-node java">
-        <b>stockai（Java / Spring Boot）</b>
-        <span>唯一的写入口 · 校验 + 幂等 + 事务 · 指标计算 · PDF 下载解析切块 · RAG 检索问答 · 调 DeepSeek · 缓存 · 对外 REST API</span>
-      </div>
+      <div class="arch-node py"><b>MySQL</b><span>任务 / 视频 / 字幕 / 评论 / 判定 / 观点卡 / 报告 / AI 调用记录</span></div>
+      <div class="arch-node py"><b>Redis</b><span>热点缓存</span></div>
+      <div class="arch-node py"><b>PostgreSQL + pgvector</b><span>字幕切块 + 向量，追问用（W19 加入）</span></div>
     </div>
+    <div class="arch-arrow">↓ 外部依赖</div>
     <div class="arch-row">
-      <div class="arch-node"><b>MySQL</b><span>公司 / 财报 / 日行情 / AI报告 / 同步任务 / 年报文档状态</span></div>
-      <div class="arch-node"><b>PostgreSQL + pgvector</b><span>只存年报文本块 + 向量（W18 加入）</span></div>
-      <div class="arch-node"><b>Redis</b><span>指标查询缓存 + AI 报告缓存（LLM 贵且慢）</span></div>
-    </div>
-    <div class="arch-row">
-      <div class="arch-node ext"><b>DeepSeek API</b><span>生成财报解读 / 回答问题</span></div>
-      <div class="arch-node ext"><b>向量接口</b><span>把文字转成向量（W19 选定）</span></div>
-    </div>
-    <div class="arch-arrow">↓ REST API</div>
-    <div class="arch-row">
-      <div class="arch-node fe"><b>前端（Vue3）</b><span>你的主场。第 20 周做，1 周够</span></div>
+      <div class="arch-node ext"><b>B 站网页接口</b><span>搜索 / 视频详情 / 字幕 / 评论</span></div>
+      <div class="arch-node ext"><b>DeepSeek</b><span>文字类 AI 调用</span></div>
+      <div class="arch-node ext"><b>向量接口</b><span>W19 定</span></div>
     </div>
   </div>
-
-  <div class="warmbox">
-    <strong>Python 部分的时间上限：2 周（约 12h），之后不再投入。</strong>
-    你的目标是练 Java 后端，Python 采集是配角。所以强烈建议用 <strong>akshare</strong> 这类现成库拿数据，
-    而不是自己写 HTML 解析器——写解析器会吃掉几十小时，且学到的东西对你的目标零价值。
-  </div>
-
-  <h3>年报问答（RAG）的流程</h3>
-<pre>① 前端：搜公司（联想 → 确定股票代码）+ 选报告期 + 输入问题
-② 后端：查 (股票代码, 报告期) 的年报文档状态
-     就绪 → 直接走 ④
-     没有/失败 → 建入库任务（唯一约束防重复）→ 返回"处理中" + 任务 id
-③ 后台任务：巨潮查公告 → 下载 PDF → 解析 → 按章节切块 → 转向量 → 写入 PG
-     状态：排队 → 下载中 → 解析中 → 向量化中 → 就绪 / 失败（可重试）
-④ 问答：问题转向量 → 先按公司+报告期过滤，再找最相近的几段 → 拼 prompt → 流式返回
-⑤ 前端：流式显示答案 + 引用原文页码</pre>
-  <div class="pitfall">
-    <strong>三个必踩的坑</strong>：
-    ① 爬取不能放在用户请求里同步跑——一份年报两三百页，处理要几分钟，必须做成后台任务。<br>
-    ② PDF 里的表格转成文字后数字会串行错位，<strong>数字类问题别走 RAG</strong>，用 <code>financial_report</code> 里的结构化数据。<br>
-    ③ 检索一定先按公司和报告期过滤，否则问茅台可能搜出五粮液的段落。
+  <div class="insight">
+    <strong>采集写成一个接口：</strong>比如 <code>ContentSource</code>，B 站是第一个实现。以后真想接 ESP32 手机采集，加一个实现就行。
+    现阶段<strong>只留接口，不为它做额外工作</strong>。
   </div>
 </section>
 
 <!-- ============================================ -->
-<section id="comm">
-  <h2><span class="num">3</span>两个服务怎么通信<span class="sub">— 这是本项目最重要的架构决策</span></h2>
+<section id="flow">
+  <h2><span class="num">3</span>一次查询怎么跑</h2>
+<pre>① 前端提交问题 → 后端建一条研究任务，立刻返回任务 id
+② 后台任务开跑，状态依次推进，前端实时看进度：
+   排队 → 改写关键词 → 搜索 → 采集 → 判恰饭 → 提观点 → 汇总 → 完成
+                                                    ↘ 失败（记原因，可重试）
+③ 改写关键词：AI 把问题改成 2～3 个搜索词
+④ 搜索：去重后约 30 个候选视频
+⑤ 采集（逐个、限速）：详情 → 字幕 → 热门评论；没字幕的记“跳过”
+⑥ 判恰饭（每视频一次 AI）：恰饭 / 疑似 / 真实分享 + 理由 + 证据
+⑦ 提观点（每个非恰饭视频一次 AI）：针对问题抽观点和产品评价，每条带时间点
+⑧ 汇总（一次 AI）：合并、归类、计数，生成报告
+⑨ 报告落库；之后可以追问</pre>
 
-  <p>Python 采到数据后，怎么进 MySQL？三种做法，差别很大：</p>
-
+  <h3>B 站采集的四条硬规矩</h3>
   <table>
-    <thead><tr><th>方案</th><th>怎么做</th><th>问题</th><th>评价</th></tr></thead>
+    <thead><tr><th>规矩</th><th>为什么</th></tr></thead>
     <tbody>
-      <tr>
-        <td>A. Python 直连数据库</td>
-        <td>Python 里 <code>pymysql</code> 直接 INSERT</td>
-        <td>两个服务耦合到同一份 schema。Java 改表结构会**静默打断** Python；校验/幂等/事务逻辑要写两遍</td>
-        <td style="color:var(--red)">❌ 最省事但最差</td>
-      </tr>
-      <tr>
-        <td>B. Python 写文件，Java 导入</td>
-        <td>产出 CSV/JSON → Java 定时读目录</td>
-        <td>解耦了，但引入文件管理、部分失败、重复导入等一堆问题</td>
-        <td style="color:var(--accent-warm)">🤔 可行，但杂事多</td>
-      </tr>
-      <tr>
-        <td><strong>C. Python 调 Java 的上报接口</strong></td>
-        <td><code>POST /api/internal/reports/batch</code></td>
-        <td>要设计批量接口、想清楚幂等和事务边界</td>
-        <td style="color:var(--green)">✅ 推荐</td>
-      </tr>
+      <tr><td><strong>签名单独一个类</strong> <code>WbiSigner</code>，所有请求发送前统一签</td><td>像 axios 拦截器统一加 token。B 站改算法时只改这一处</td></tr>
+      <tr><td><strong>全局限速</strong>：所有请求排队，间隔 1–3 秒随机</td><td>30 个视频 × 3 个请求 ≈ 90 次，约 3 分钟</td></tr>
+      <tr><td><strong>被拦就停</strong>：返回 412 就退避，连续被拦则任务标失败</td><td>硬冲只会让小号被封</td></tr>
+      <tr><td><strong>登录信息不进 git</strong>：小号的 <code>SESSDATA</code> 放环境变量</td><td>AI 自动字幕需要登录</td></tr>
     </tbody>
   </table>
 
-  <div class="insight">
-    <strong>选 C 的理由不是"更规范"，是它正好逼你练到阶段 1–2 最核心的三个知识点</strong>：
-    批量插入的性能（一条条 INSERT vs 批量 INSERT，差几十倍）、<strong>幂等</strong>（同一公司同一报告期重复上报怎么办）、<strong>事务边界</strong>（1000 条里第 500 条失败，前 499 条要不要回滚）。<br>
-    方案 A 会让你完全跳过这三个问题——而它们恰好是面试必问、工作必用的。
+  <div class="warmbox">
+    <strong>5 分钟出报告怎么做到：</strong>采集受限速约 3 分钟，所以 AI 调用不能等采集全部结束再一个个排队。
+    W17 起改成<strong>采集一个视频就立刻交给 AI 判恰饭，AI 调用同时跑 3–5 个</strong>。W7–W16 的同步版本慢一点没关系。
   </div>
-
-  <h3>上报接口的形状（第 6 周做）</h3>
-  <pre>
-<span class="c">// Python 侧调用</span>
-POST /api/internal/reports/batch
-{
-  <span class="s">"source"</span>: <span class="s">"akshare"</span>,
-  <span class="s">"batchId"</span>: <span class="s">"20260813-001"</span>,        <span class="c">// ← 幂等键，重复上报同一批直接返回</span>
-  <span class="s">"items"</span>: [
-    { <span class="s">"stockCode"</span>: <span class="s">"600519"</span>, <span class="s">"reportPeriod"</span>: <span class="s">"2025Q4"</span>, <span class="s">"revenue"</span>: ..., ... },
-    ...  <span class="c">// 一次 500–1000 条</span>
-  ]
-}</pre>
-  <p>要想清楚的三个问题（第 6 周的思考题）：</p>
-  <ol>
-    <li>幂等靠 <code>batchId</code> 记录表，还是靠 <code>(stockCode, reportPeriod)</code> 唯一索引 + <code>ON DUPLICATE KEY UPDATE</code>？两者能否共存？</li>
-    <li>1000 条里第 500 条数据格式非法：整批回滚，还是跳过它并返回失败明细？<strong>这不是技术问题，是产品决策</strong>——想清楚再写代码。</li>
-    <li>这个接口在 <code>/api/internal/</code> 下，要不要鉴权？怎么防止被外部调用？</li>
-  </ol>
+  <div class="pitfall">
+    <strong>别陷进去：</strong>B 站接口参数会不定期调整。卡住超过 20 分钟就查社区文档或问 AI，别花几天研究反爬——那对练 Java 没价值。
+  </div>
 </section>
 
 <!-- ============================================ -->
 <section id="model">
-  <h2><span class="num">4</span>数据模型<span class="sub">— 7 张表（MySQL 6 + PostgreSQL 1），含一个关键建模决策</span></h2>
-
-  <h3>财报指标：宽表还是窄表？</h3>
-  <p>这是财务数据存储的经典分歧。点下面切换看两种设计的实际差异：</p>
-
-  <div class="demo">
-    <span class="demo-label">对比 — 同一个需求，两种表设计</span>
-    <div class="switch-btns">
-      <button class="active" data-p="wide">宽表（推荐）</button>
-      <button data-p="narrow">窄表 / EAV</button>
-    </div>
-
-    <div class="switch-panel show" id="p-wide">
-      <pre>
-<span class="k">CREATE TABLE</span> financial_report (
-  id           <span class="k">BIGINT</span> <span class="k">PRIMARY KEY</span> AUTO_INCREMENT,
-  stock_code   <span class="k">VARCHAR</span>(<span class="n">10</span>)  <span class="k">NOT NULL</span>,
-  report_period <span class="k">VARCHAR</span>(<span class="n">10</span>) <span class="k">NOT NULL</span>,   <span class="c">-- 2025Q4</span>
-  revenue          <span class="k">DECIMAL</span>(<span class="n">20</span>,<span class="n">2</span>),
-  net_profit       <span class="k">DECIMAL</span>(<span class="n">20</span>,<span class="n">2</span>),
-  total_assets     <span class="k">DECIMAL</span>(<span class="n">20</span>,<span class="n">2</span>),
-  total_liabilities <span class="k">DECIMAL</span>(<span class="n">20</span>,<span class="n">2</span>),
-  operating_cashflow <span class="k">DECIMAL</span>(<span class="n">20</span>,<span class="n">2</span>),
-  <span class="k">UNIQUE KEY</span> uk_code_period (stock_code, report_period)
-);</pre>
-      <p style="font-size:13px;">查一家公司近 8 期所有指标：</p>
-      <pre><span class="k">SELECT</span> * <span class="k">FROM</span> financial_report
-<span class="k">WHERE</span> stock_code = <span class="s">'600519'</span> <span class="k">ORDER BY</span> report_period <span class="k">DESC</span> <span class="k">LIMIT</span> <span class="n">8</span>;</pre>
-      <table>
-        <tr><th>✅ 优点</th><td>SQL 直白；一行一个报告期；类型精确；索引好建；行数少（5000 公司 × 40 期 ≈ <strong>20 万行</strong>）</td></tr>
-        <tr><th>❌ 缺点</th><td>加指标要 <code>ALTER TABLE</code></td></tr>
-      </table>
-    </div>
-
-    <div class="switch-panel" id="p-narrow">
-      <pre>
-<span class="k">CREATE TABLE</span> financial_indicator (
-  stock_code     <span class="k">VARCHAR</span>(<span class="n">10</span>),
-  report_period  <span class="k">VARCHAR</span>(<span class="n">10</span>),
-  indicator_name <span class="k">VARCHAR</span>(<span class="n">50</span>),   <span class="c">-- 'revenue' / 'net_profit' / ...</span>
-  indicator_value <span class="k">DECIMAL</span>(<span class="n">20</span>,<span class="n">2</span>)
-);</pre>
-      <p style="font-size:13px;">同一个需求，要行转列（透视）：</p>
-      <pre><span class="k">SELECT</span> report_period,
-  <span class="k">MAX</span>(<span class="k">CASE WHEN</span> indicator_name=<span class="s">'revenue'</span> <span class="k">THEN</span> indicator_value <span class="k">END</span>) <span class="k">AS</span> revenue,
-  <span class="k">MAX</span>(<span class="k">CASE WHEN</span> indicator_name=<span class="s">'net_profit'</span> <span class="k">THEN</span> indicator_value <span class="k">END</span>) <span class="k">AS</span> net_profit
-  <span class="c">-- ... 每个指标一行 CASE WHEN</span>
-<span class="k">FROM</span> financial_indicator
-<span class="k">WHERE</span> stock_code=<span class="s">'600519'</span> <span class="k">GROUP BY</span> report_period;</pre>
-      <table>
-        <tr><th>✅ 优点</th><td>加指标不改表结构</td></tr>
-        <tr><th>❌ 缺点</th><td>SQL 复杂到难维护；<strong>类型全丢</strong>（都是 decimal）；行数 ×指标数（<strong>1000 万行</strong>）；每个查询都要透视</td></tr>
-      </table>
-    </div>
-  </div>
-
-  <div class="insight">
-    <strong>选宽表。</strong>理由：MVP 只有 8 个指标且集合稳定，"加指标不用改表"这个优点你几乎用不上；
-    而窄表带来的 SQL 复杂度和 50 倍行数是每天都要付的成本。
-    <strong>灵活性只在真的会变的地方才值钱</strong>——这句话本身就是个可以讲给面试官的判断。
-  </div>
-
-  <h3>5 张表</h3>
+  <h2><span class="num">4</span>数据模型<span class="sub">— MySQL 9 张 + PostgreSQL 1 张，字段细节写代码时定</span></h2>
   <table>
-    <thead><tr><th>表</th><th>作用</th><th>量级</th><th>要点</th></tr></thead>
+    <thead><tr><th>表</th><th>作用</th><th>要点</th></tr></thead>
     <tbody>
-      <tr><td><code>stock</code></td><td>公司基本信息（代码/名称/行业/上市日）</td><td>~5000</td><td>小表，查询会大量 JOIN 它</td></tr>
-      <tr><td><code>financial_report</code></td><td>财报指标宽表</td><td>~20 万</td><td>唯一索引 <code>(stock_code, report_period)</code> 兼做幂等</td></tr>
-      <tr><td><code>daily_quote</code></td><td>日行情（开高低收/成交量）</td><td><strong>~1000 万</strong></td><td>⭐ 见下</td></tr>
-      <tr><td><code>ai_report</code></td><td>AI 解读结果（含 model / prompt 版本 / token 数）</td><td>~几万</td><td>LLM 结果必须落库，不能只放 Redis</td></tr>
-      <tr><td><code>sync_task</code></td><td>采集批次记录（batchId / 状态 / 条数 / 失败明细）</td><td>~几千</td><td>幂等和补数的依据</td></tr>
-      <tr><td><code>report_document</code></td><td>年报文档（代码 / 报告期 / PDF 地址 / 本地路径 / 状态 / 失败原因）</td><td>~几千</td><td>唯一索引 <code>(stock_code, report_period, doc_type)</code> 防重复抓取</td></tr>
-      <tr><td><code>doc_chunk</code>（PG）</td><td>文本块（文档 id / 代码 / 报告期 / 章节 / 页码 / 正文 / 向量）</td><td>~几十万</td><td>检索先按代码+报告期过滤；页码用来给答案标出处</td></tr>
+      <tr><td><code>research_task</code></td><td>一次查询：问题、关键词、状态、进度、失败原因</td><td>状态机落地；可重试</td></tr>
+      <tr><td><code>video</code></td><td>视频基本信息</td><td>唯一索引 <code>bvid</code>，重复搜到就更新（幂等）</td></tr>
+      <tr><td><code>video_subtitle</code></td><td>字幕，带起止时间</td><td>一个视频几百句 → 批量插入。按句存还是整段存，W6 对比后定</td></tr>
+      <tr><td><code>video_comment</code></td><td>评论</td><td>⭐ W9–W10 慢查询的主角</td></tr>
+      <tr><td><code>task_video</code></td><td>任务和视频的关联</td><td>记录本次是“采用 / 跳过 / 排除”</td></tr>
+      <tr><td><code>ad_verdict</code></td><td>判恰饭结果</td><td>唯一键（视频, prompt 版本），跟问题无关所以能跨任务复用</td></tr>
+      <tr><td><code>video_insight</code></td><td>观点卡</td><td>唯一键（视频, 问题指纹, prompt 版本）</td></tr>
+      <tr><td><code>report</code></td><td>最终报告</td><td>必须落库，不能只放 Redis</td></tr>
+      <tr><td><code>llm_call</code></td><td>每次 AI 调用的记录</td><td>模型、prompt 版本、token、耗时 —— 讲 AI 工程化的证据，也用来算钱</td></tr>
+      <tr><td><code>subtitle_chunk</code>（PG）</td><td>字幕切块 + 向量</td><td>追问时先按本次任务的视频过滤，再按相似度找</td></tr>
     </tbody>
   </table>
 
-  <div class="pitfall">
-    <strong>两个库之间没有事务</strong>：文本块写在 PG，文档状态在 MySQL，没法一起回滚。
-    做法：先在 PG 里一个事务内"删掉这份文档的旧块 → 写入新块"，成功后再把 MySQL 里的状态改成就绪。
-    中途失败就整体重试，因为"先删后写"重复执行结果一样。<strong>这个处理思路本身就是一段面试素材。</strong>
+  <div class="warmbox">
+    <strong>慢查询场景要靠造数据：</strong>自己用的真实评论只有几万到几十万行，查起来不会慢。
+    所以 W9 <strong>造 1000 万行评论假数据</strong>，再用真实会用的查询（每个视频点赞前 10 的评论、某 UP 主视频的恰饭比例）复现慢查询。
   </div>
 
-  <div class="insight">
-    <strong>⭐ 为什么要有 <code>daily_quote</code>（日行情表）</strong>：两个原因。<br>
-    <b>业务上</b>需要——算 PE/PB 这类估值指标必须有股价，AI 解读"贵不贵"也要它。<br>
-    <b>学习上</b>更重要——5000 股 × 250 交易日 × 10 年 ≈ <strong>1000 万行</strong>，这是你阶段 2 的
-    <strong>天然慢查询场景</strong>。财报表只有 20 万行，怎么查都不慢，逼不出索引优化的需求。
-    这张表让你不用刻意造假数据就有真实的性能压力。
-  </div>
-
-  <div class="pitfall">
-    <strong>AI 报告为什么必须落库、不能只放 Redis</strong>：LLM 调用有成本、有延迟、<strong>且结果不可复现</strong>（同样的输入两次输出不同）。
-    Redis 掉了就永久丢失，且你无法回答"上次那份报告是哪个模型、哪版 prompt 生成的"。
-    所以 <code>ai_report</code> 表要存 model 名、prompt 版本号、token 消耗——<strong>这三个字段将来是你面试讲 AI 工程化的具体证据</strong>。
-  </div>
+  <h3>怎么判断恰饭（第一版，按抽查结果调）</h3>
+  <table>
+    <thead><tr><th>线索</th><th>从哪看</th><th>分量</th></tr></thead>
+    <tbody>
+      <tr><td>口播“本期由 xx 赞助 / 合作”</td><td>字幕</td><td>强</td></tr>
+      <tr><td>平台标注的商业推广（如果视频详情里有这个字段）</td><td>视频详情</td><td>强（动手时先核实）</td></tr>
+      <tr><td>简介或 UP 主置顶评论挂购买链接、优惠码</td><td>简介、置顶评论</td><td>强</td></tr>
+      <tr><td>全片只讲一个品牌、只有优点没有缺点</td><td>字幕</td><td>中</td></tr>
+      <tr><td>评论区大量“恰饭”“广告”吐槽</td><td>评论</td><td>中</td></tr>
+    </tbody>
+  </table>
+  <p>没有证据（引用的话 + 时间点）不能判“恰饭”。验收：随便抽 5 个被排除的视频，你认同至少 4 个。</p>
 </section>
 
 <!-- ============================================ -->
@@ -462,7 +341,7 @@ POST /api/internal/reports/batch
     <div class="wk-head">
       <span class="wk-pct" id="wkPct">0%</span>
       <div class="wk-bar-wrap"><div class="wk-bar"><div class="wk-bar-fill" id="wkFill"></div></div></div>
-      <span class="wk-now" id="wkNow">当前：<b>W1</b></span>
+      <span class="wk-now" id="wkNow">当前：<b>W3</b></span>
     </div>
     <div class="wk-actions">
       <button onclick="wkReset()">清空</button>
@@ -486,93 +365,77 @@ POST /api/internal/reports/batch
   <table>
     <thead><tr><th>周次</th><th>内容</th><th>为什么不能砍</th></tr></thead>
     <tbody>
-      <tr><td>W3–W6</td><td>分层 + 建模 + 批量上报接口</td><td>没有这个就没有"项目"，只有一堆脚本</td></tr>
-      <tr><td>W8</td><td>复杂 SQL（同比增速）</td><td>区分"会 CRUD"和"会业务开发"的分水岭</td></tr>
+      <tr><td>W3–W6</td><td>分层 + B 站客户端 + 批量入库（幂等、事务边界）</td><td>没有这个就没有“项目”，只有一堆脚本</td></tr>
+      <tr><td>W8</td><td>复杂 SQL（窗口函数取每视频前 N 评论）</td><td>区分“会 CRUD”和“会业务开发”的分水岭</td></tr>
       <tr><td>W9–W10</td><td>慢查询复现 + 索引优化<strong>并记录前后数据</strong></td><td>⭐ 全项目最值钱的一段面试素材</td></tr>
-      <tr><td>W11–W13</td><td>DeepSeek 接入 + 失败处理 + 缓存</td><td>项目的差异化卖点</td></tr>
-      <tr><td>W17–W20</td><td>年报 RAG 主链路：后台任务 → 切块 → 检索 → 带出处的问答</td><td>项目里最新、最能聊的 AI 工程内容</td></tr>
-      <tr><td>W24–W25</td><td>部署拿到公网 URL + 一次真实排查</td><td>简历上有链接 vs 只有 GitHub，差别巨大</td></tr>
+      <tr><td>W11–W13</td><td>DeepSeek 接入 + 失败处理 + 落库缓存</td><td>项目的差异化卖点</td></tr>
+      <tr><td>W17–W18</td><td>后台任务 + 多步 AI 流水线出报告</td><td>产品核心，也是最能聊的并发和 AI 工程内容</td></tr>
+      <tr><td>W25</td><td>压测 + 一次真实排查</td><td>⭐ 能讲 3 分钟的排查故事</td></tr>
     </tbody>
   </table>
 
   <h3>可以砍（按砍的优先级）</h3>
   <ol>
-    <li><strong>W19 里的并行向量化</strong>——串行分批调接口也能跑通，W17 的线程池已经覆盖了核心考点</li>
-    <li><strong>W15 JWT 鉴权</strong>——如果定位成单用户工具就不需要。但注意：砍了它，简历上就不能写"鉴权"</li>
-    <li><strong>W16 定时任务</strong>——可以先用手动触发接口代替，定时只是加个注解的事</li>
-    <li><strong>W22 前端看板砍成极简版</strong>——你是专业前端，这块砍时间最安全，做个能演示的最小版本即可</li>
-    <li><strong>daily_quote 表和估值指标</strong>——如果时间紧，可以只留财报不做行情。但这样就失去了 1000 万行的慢查询场景，<strong>那时必须自己造假数据补上</strong>，否则 W9–W10 无从下手</li>
+    <li><strong>W15 JWT 登录</strong>——只在本地跑，用不上。但注意：砍了它，简历上就不能写“鉴权”</li>
+    <li><strong>W16 定时任务</strong>——手动触发也能用，定时只是加个注解的事</li>
+    <li><strong>W22 前端砍成极简版</strong>——你是专业前端，这块砍时间最安全</li>
+    <li><strong>W19–W20 追问</strong>——报告本身已经能用。但砍了就少了 RAG 这块 AI 工程内容，尽量保留</li>
   </ol>
 
   <div class="warmbox">
     <strong>滑期的正确处理方式</strong>：不要延长总周期去追完整功能，而是<strong>砍功能、保关键节点</strong>。
-    因为面试时间点通常是外部决定的（跳槽窗口、公司情况），而"功能少但每处都能讲透的项目"
-    远胜过"功能多但处处是抄的项目"。
+    “功能少但每处都能讲透的项目”远胜过“功能多但处处是抄的项目”。
   </div>
 </section>
 
 <!-- ============================================ -->
 <section id="risk">
-  <h2><span class="num">7</span>合规与风险<span class="sub">— 项目要公开部署，这几条必须做</span></h2>
+  <h2><span class="num">7</span>合规与风险</h2>
 
   <div class="pitfall">
-    <strong>① 定位成"财报解读工具"，不是"投资建议"。</strong>
-    AI 输出应该是"这家公司的财务特征和风险点"，<strong>不要输出"买入/卖出/目标价"</strong>。
-    在国内，面向公众提供证券投资建议属于持牌业务。页面和 README 都加免责声明：
-    "本项目仅为技术演示，数据可能有误，不构成任何投资建议。"
+    <strong>① 这是违反 B 站用户协议的自动化访问</strong>，即使不破解任何东西。
+    守住：<strong>个人自用、低频、用小号、不对外分发采集到的内容</strong>。
   </div>
 
   <div class="pitfall">
-    <strong>② 爬虫要有节制。</strong>加请求间隔（每次 1–3 秒）、看 robots.txt、失败要退避重试而不是死循环。
-    不要为了快而并发打爆人家服务器——这既不礼貌也容易被封 IP。
-    只采公开披露数据，不做数据的商业化分发。
+    <strong>② 只用公开的 WBI 签名，不逆向任何平台的防护。</strong>不碰小红书、抖音。
+    限速 1–3 秒，被拦就停，不并发、不硬冲。
   </div>
 
   <div class="pitfall">
-    <strong>③ DeepSeek 和向量接口的 Key 绝对不能进 git。</strong>
-    用环境变量或 <code>application-local.yml</code>（加进 <code>.gitignore</code>）。
-    这条对你不难——你在前端就知道 <code>.env</code> 会被打进产物所以不能放密钥；
-    后端配置在服务器运行时读取，可以放，但<strong>前提是别提交上去</strong>。
-    GitHub 有密钥扫描，泄露的 key 几分钟内就会被人用掉。
+    <strong>③ 密钥和登录信息绝对不能进 git。</strong>
+    DeepSeek Key、向量接口 Key、B 站小号的 <code>SESSDATA</code> 都用环境变量或 <code>application-local.yml</code>（加进 <code>.gitignore</code>）。
+    GitHub 有密钥扫描，泄露的 key 几分钟内就会被人用掉；<code>SESSDATA</code> 泄露等于别人直接登录你的账号。
   </div>
 
   <div class="warmbox">
-    <strong>④ 部署后的成本控制。</strong>AI 接口如果暴露在公网无限制调用，可能被刷。
-    W24 部署时加两道防线：接口限流（每 IP 每天 N 次）+ DeepSeek 和向量接口后台都设消费上限。
+    <strong>④ 报告只放摘要和链接，不整段转载字幕；不替用户做购买决定。</strong>
+    页面注明“内容来自 B 站用户分享，不代表事实”。
+    一次查询有 30 次以上 AI 调用，靠缓存和 <code>llm_call</code> 记录盯住花费，DeepSeek 后台设消费上限。
   </div>
 </section>
 
 </main>
 
 <footer>
-  StockAI 项目计划 · 2026-08-13 制定 · 10-14 加入年报 RAG · 勾选状态存本机 localStorage<br>
-  方法论和定位见 <code>D:\front-end\doc\frontend-to-java-fullstack-guide.html</code>
+  BiliScout 项目计划 · 2026-10-21 由 StockAI 改版 · 勾选状态存本机 localStorage<br>
+  完整设计见 <code>docs/design-2026-10-21-biliscout.html</code>　·　方法论和定位见 <code>D:\front-end\doc\frontend-to-java-fullstack-guide.html</code>
 </footer>
 
 <script>
-// ---------- 表设计切换 ----------
-document.querySelectorAll('.switch-btns button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.switch-btns button').forEach(b => b.classList.remove('active'))
-    btn.classList.add('active')
-    document.querySelectorAll('.switch-panel').forEach(p => p.classList.remove('show'))
-    document.getElementById('p-' + btn.dataset.p).classList.add('show')
-  })
-})
-
 // ---------- 26 周数据 ----------
 const PHASES = [
   {
     name: '阶段 0 · 当天看见 JSON（~10h）',
     weeks: [
-      { n: 'W1', t: '环境 + 第一个 GET 接口', must: true, done: true,
+      { n: 'W1', t: '环境 + 第一个 GET 接口', must: true,
         goal: '浏览器看到自己返回的 JSON',
         do: ['JDK 21 + Spring Initializr', '@RestController + @GetMapping', '第一个 git commit'],
         know: ['starter / parent POM 机制', '@SpringBootApplication 三合一', '组件扫描范围'],
         check: '访问 /api/ping 返回 JSON' },
-      { n: 'W2', t: 'POST + DTO + 版本决策', must: true,
+      { n: 'W2', t: 'POST + DTO', must: true,
         goal: '能接收 JSON body，撞上 Map 的类型代价后改 record',
-        do: ['决定 Boot 版本（4.1 还是降 3.x）', 'POST /api/campaigns 接 @RequestBody', '先用 Map 再改 record', '建 .http 文件测试'],
+        do: ['POST 接口接 @RequestBody', '先用 Map 再改 record', '建 .http 文件测试'],
         know: ['Jackson 序列化/反序列化', 'record 作为 DTO', 'DTO 包的位置'],
         check: 'POST 能接到三种类型的字段，且用 record 承载' },
     ]
@@ -581,35 +444,35 @@ const PHASES = [
     name: '阶段 1 · 打通一条完整链路（~40h）',
     weeks: [
       { n: 'W3', t: '建正式项目 + Docker MySQL + 第一张表', must: true,
-        goal: 'stockai 项目跑起来，stock 表能增删改查',
-        do: ['新建正式项目 stockai（独立 git 仓库，包名 com.yellres.stockai）', 'docker compose 起 MySQL', '建 stock 表', 'MyBatis-Plus 单表 CRUD'],
+        goal: 'biliscout 项目跑起来，research_task 表能增删改查',
+        do: ['新建 biliscout/（独立 git 仓库，包名 com.yellres.biliscout）', 'docker compose 起 MySQL', '建 research_task 表（问题、状态、创建时间）', 'MyBatis-Plus 单表 CRUD'],
         know: ['Docker compose 起依赖', 'MyBatis-Plus 基础', '数据源配置'],
-        check: '能通过接口新增/查询一只股票' },
+        check: '能通过接口新建一条研究任务并查回来' },
       { n: 'W4', t: '三层分层 + 统一响应 + 全局异常', must: true,
         goal: 'Controller 不超 15 行，错误响应统一好看',
-        do: ['拆出 Service / Mapper 层', 'Result<T> 统一响应体', '@ControllerAdvice 全局异常', '@Valid 参数校验'],
+        do: ['拆出 Service / Mapper 层', 'Result<T> 统一响应体', '@ControllerAdvice 全局异常', '@Valid 参数校验（问题不能为空、长度上限）'],
         know: ['分层职责边界', '业务异常类设计', 'Bean 校验'],
         check: '传非法参数返回结构化错误，不再是 Spring 默认白页' },
-      { n: 'W5', t: '财报表建模 + 分页列表', must: true,
-        goal: 'financial_report 宽表建好，能分页查',
-        do: ['按第 4 节设计建 financial_report 表', '唯一索引 (stock_code, report_period)', '分页查询接口', 'Entity/DTO/VO 分离落地'],
-        know: ['宽表 vs 窄表的取舍', '分页的两种实现', 'DECIMAL 为什么不能用 double 存金额'],
-        check: '能分页查某公司的历史财报' },
-      { n: 'W6', t: '批量上报接口 + 幂等 + 事务边界', must: true,
-        goal: 'Python 侧能调的那个接口，且重复上报不出脏数据',
-        do: ['POST /api/internal/reports/batch', '批量插入（对比一条条 INSERT 的耗时）', '幂等设计（唯一索引 + ON DUPLICATE KEY）', '部分失败怎么处理——先想清楚再写'],
-        know: ['批量插入性能差异', '幂等的两种实现', '@Transactional 边界', 'sync_task 记录批次'],
-        check: '同一批数据上报两次，数据库结果一致；1000 条能在合理时间内写完' },
-      { n: 'W7', t: 'Python 采集服务 MVP', must: true,
-        goal: '能采到 50 家公司近 3 年财报并成功上报',
-        do: ['用 akshare 取财报数据（别自己写 HTML 解析器）', '清洗成上报接口的 JSON 格式', '调 Java 上报接口', '加请求间隔 + 失败重试'],
-        know: ['采集端只做采集的职责边界', '限流与退避重试'],
-        check: '跑一次脚本，MySQL 里有真实财报数据' },
-      { n: 'W8', t: 'SQL 硬啃周：衍生指标 + 同比增速', must: true,
-        goal: '能写出带自连接/窗口函数的业务 SQL',
-        do: ['毛利率/ROE/负债率的计算（决定算在 SQL 还是 Java——写下理由）', '同比增速：自连接 or LAG() 窗口函数', '多表 JOIN + GROUP BY 聚合'],
+      { n: 'W5', t: 'B 站客户端：搜索 + WBI 签名 + 限速', must: true,
+        goal: '程序能按关键词搜到 B 站视频列表',
+        do: ['RestClient 调 B 站搜索接口', 'WbiSigner：刷新密钥 + 请求前统一签名（照公开算法写）', '全局限速：所有请求排队，间隔 1–3 秒随机', '小号 SESSDATA 走环境变量'],
+        know: ['HTTP 客户端选型', '请求拦截器（对照 axios 拦截器）', '外部配置与密钥管理'],
+        check: '搜“侧睡 枕头”返回 20 条以上视频，连续搜 5 次不被拦' },
+      { n: 'W6', t: '视频 / 字幕 / 评论入库 + 幂等 + 事务边界', must: true,
+        goal: '同一个视频采两次，库里不出重复和脏数据',
+        do: ['建 video / video_subtitle / video_comment 表', '字幕和评论批量插入（对比一条条 INSERT 的耗时）', '幂等：唯一索引 bvid + 存在即更新', '评论存到一半失败怎么办——先想清楚再写'],
+        know: ['批量插入性能差异', '幂等的两种实现', '@Transactional 边界', '字幕按句存 vs 整段存的取舍'],
+        check: '同一视频采集两次，数据库结果一致；一个视频几百条字幕能在 1 秒内写完' },
+      { n: 'W7', t: '第一条完整链路（同步、无 AI）', must: true,
+        goal: '给一个关键词，30 个视频的详情、字幕、评论都进库',
+        do: ['搜索 → 逐个取详情 → 字幕 → 热门评论', 'task_video 关联表，记“采用 / 跳过”', '没字幕的跳过并计数', '被拦（412）时退避重试，连续被拦就停'],
+        know: ['限流与退避重试', '外部依赖失败的处理分级'],
+        check: '跑一次，MySQL 里有 30 个视频的真实数据，跳过的有原因' },
+      { n: 'W8', t: 'SQL 硬啃周：窗口函数 + 聚合', must: true,
+        goal: '能写出带窗口函数的业务 SQL',
+        do: ['每个视频取点赞前 10 的评论：ROW_NUMBER() OVER (PARTITION BY ...)', '某次任务里每个 UP 主的视频数、平均播放', '关键词在字幕里的命中次数聚合（决定算在 SQL 还是 Java——写下理由）'],
         know: ['JOIN 四种', '窗口函数', '计算下推 vs 应用层计算的取舍'],
-        check: '一条 SQL 查出某公司近 8 期的营收+同比增速' },
+        check: '一条 SQL 查出某次任务每个视频的前 10 热评' },
     ]
   },
   {
@@ -617,113 +480,113 @@ const PHASES = [
     weeks: [
       { n: 'W9', t: '灌数据 + 复现慢查询', must: true,
         goal: '亲眼看到接口从毫秒变成秒级',
-        do: ['造 daily_quote 假数据到 1000 万行（顺手练批量插入）', '写一个多表聚合查询', '记录基线耗时——⭐ 这个数字后面要用', 'EXPLAIN 看执行计划'],
+        do: ['造 video_comment 假数据到 1000 万行（顺手练批量插入）', '跑 W8 的热评查询和统计查询', '记录基线耗时——⭐ 这个数字后面要用', 'EXPLAIN 看执行计划'],
         know: ['EXPLAIN 各字段含义', 'type=ALL 意味着什么', '慢查询日志'],
-        check: 'interview/README.md 的性能表里填上"优化前"的真实数字' },
+        check: 'interview/README.md 的性能表里填上“优化前”的真实数字' },
       { n: 'W10', t: '索引优化周', must: true,
         goal: '拿到全项目最值钱的一段面试素材',
         do: ['加联合索引，验证最左前缀', '尝试覆盖索引', '故意写几个让索引失效的 SQL（函数、隐式转换、!=）', '记录优化前后对比数据 + EXPLAIN 变化'],
         know: ['B+ 树为什么适合磁盘', '最左前缀', '覆盖索引', '索引失效场景'],
         check: '写一篇 troubles/ 文档，含前后耗时和 EXPLAIN 截图' },
-      { n: 'W11', t: 'DeepSeek 接入 + prompt 设计', must: true,
-        goal: '能生成第一份 AI 财报解读',
-        do: ['RestClient/WebClient 调 DeepSeek（OpenAI 兼容接口）', 'API Key 放环境变量，绝不进 git', 'prompt 设计：财报数据怎么组织成上下文', '给 prompt 加版本号'],
-        know: ['HTTP 客户端选型', '外部 API 的配置管理', 'prompt 作为代码资产要版本化'],
-        check: '输入一个股票代码，返回一段像样的财报解读' },
+      { n: 'W11', t: 'DeepSeek 接入：改写关键词 + 判恰饭', must: true,
+        goal: '给一个视频，AI 返回“恰饭 / 疑似 / 真实分享”+ 理由 + 证据',
+        do: ['RestClient 调 DeepSeek（OpenAI 兼容接口）', 'API Key 放环境变量，绝不进 git', '问题 → 2～3 个搜索词', '判恰饭 prompt v1，要求固定 JSON 格式返回', '给 prompt 加版本号'],
+        know: ['外部 API 的配置管理', 'prompt 作为代码资产要版本化', '让 AI 输出结构化数据'],
+        check: '挑 10 个视频人工判一遍，AI 和你的判断至少 8 个一致' },
       { n: 'W12', t: 'AI 调用的工程问题', must: true,
-        goal: '外部 API 挂了、慢了、超额了，系统不崩',
-        do: ['超时设置（LLM 响应可能几十秒）', '重试 + 指数退避', '限流（保护自己的钱包）', '失败降级：返回缓存的旧报告还是明确报错'],
+        goal: '外部 API 挂了、慢了、乱回了，系统不崩',
+        do: ['超时设置（LLM 响应可能几十秒）', '重试 + 指数退避', '返回格式校验：不合格重试一次，再不行记“判定失败”按“疑似”处理', '每次调用写 llm_call（模型、prompt 版本、token、耗时）'],
         know: ['超时/重试/熔断的区别', '幂等与重试的关系', '外部依赖的降级策略'],
-        check: '把 API Key 改错，接口返回友好错误而不是 500 堆栈' },
-      { n: 'W13', t: 'Redis 缓存 + 一致性', must: true,
-        goal: '同一份报告不重复花钱生成',
-        do: ['ai_report 落库 + Redis 缓存热点', '缓存 key 设计（含 prompt 版本号——想清楚为什么）', '财报更新后报告要失效', '缓存穿透/雪崩的基本防护'],
+        check: '把 API Key 改错，任务标失败并给出友好原因，而不是 500 堆栈' },
+      { n: 'W13', t: '结果落库 + Redis 缓存', must: true,
+        goal: '同一个视频不重复花钱判恰饭',
+        do: ['ad_verdict 按（视频, prompt 版本）落库复用', '热点数据进 Redis', '缓存 key 设计（含 prompt 版本号——想清楚为什么）', '缓存穿透/雪崩的基本防护'],
         know: ['缓存三大问题', '双写一致性', '为什么 LLM 结果必须落库不能只放缓存'],
-        check: '第二次请求同一报告，响应从秒级降到毫秒级且不调 API' },
+        check: '两次查询搜到同一个视频，第二次不再调 AI' },
       { n: 'W14', t: '事务深入 + 亲手踩自调用失效', must: true,
         goal: '理解 Spring AOP 代理机制',
-        do: ['写一个 this.method() 调用 @Transactional 方法，看它失效', '用 EXPLAIN 之外的方式验证事务是否生效', '批量上报的事务边界重新审视', '事务隔离级别实验（开两个会话）'],
+        do: ['写一个 this.method() 调用 @Transactional 方法，看它失效', '用实验验证事务是否生效', '入库的事务边界重新审视', '事务隔离级别实验（开两个会话）'],
         know: ['动态代理为什么导致自调用失效', '四种隔离级别的实际现象', '事务传播行为'],
         check: '能向别人解释清楚 this.save() 为什么没事务' },
-      { n: 'W15', t: 'JWT 鉴权 + ThreadLocal 上下文', must: false,
-        goal: '接口有身份，内部接口不裸奔',
-        do: ['JWT 签发与校验', 'HandlerInterceptor 拦截', 'ThreadLocal 存当前用户（想清楚为什么不能用成员变量）', '/api/internal/ 的保护'],
+      { n: 'W15', t: 'JWT 登录 + ThreadLocal 上下文', must: false,
+        goal: '接口有身份（只在本地跑，可砍）',
+        do: ['JWT 签发与校验', 'HandlerInterceptor 拦截', 'ThreadLocal 存当前用户（想清楚为什么不能用成员变量）'],
         know: ['为什么前端守卫不是安全边界', 'ThreadLocal 的用法和内存泄漏风险'],
         check: '不带 token 访问受保护接口返回 401' },
-      { n: 'W16', t: '定时任务：自动采集 + 预生成报告', must: false,
-        goal: '系统能自己跑，不用手动触发',
-        do: ['@Scheduled 定时触发采集', '预生成热门股票的 AI 报告（削峰）', '任务执行记录与失败告警'],
+      { n: 'W16', t: '定时任务：刷新过期数据', must: false,
+        goal: '系统能自己维护数据',
+        do: ['@Scheduled 刷新超过 N 天的视频数据', '清理过期缓存和失败任务', '任务执行记录'],
         know: ['@Scheduled 的局限（单机、无分布式锁）', '为什么生产环境用 XXL-Job 这类调度器'],
-        check: '设成每 5 分钟跑一次，观察 sync_task 表有记录' },
+        check: '设成每 5 分钟跑一次，观察日志和表里有记录' },
     ]
   },
   {
-    name: '阶段 3 · 异步 · RAG · 上线（~65h）',
+    name: '阶段 3 · 异步 · 报告 · 追问 · 收尾（~65h）',
     weeks: [
-      { n: 'W17', t: '异步任务制：年报 PDF 下载入库', must: true,
-        goal: '提交"抓某公司某期年报"，接口立刻返回，后台下载完成',
-        do: ['巨潮公告查询接口拿 PDF 链接（请求间隔 1–3 秒）', 'report_document 表 + 唯一索引防重复抓取', '自定义线程池跑下载任务（七个参数每个都要能说出理由）', '任务状态机：排队 → 下载中 → … → 就绪/失败，失败可重试'],
-        know: ['线程池七参数与拒绝策略', '为什么不用 Executors 的快捷方法', '两人同时查同一家公司时怎么只抓一次', '大文件下载：流式写盘而不是整个读进内存'],
-        check: '同时提交 20 个抓取任务，接口立刻返回，同一份年报只下载一次' },
-      { n: 'W18', t: 'PDF 解析 + 按章节切块', must: true,
-        goal: '一份年报变成几百个带页码、带章节的文本块',
-        do: ['PDFBox 逐页取文字', '去掉每页重复的页眉页脚', '按章节标题切块，块太长再按字数切（相邻块重叠一点）', 'docker compose 加 PostgreSQL + pgvector，建 doc_chunk 表'],
-        know: ['切块大小怎么影响检索效果', '为什么表格不走 RAG', '多数据源配置（MySQL + PG）'],
-        check: '茅台年报切完后，随便抽 5 块，章节和页码都对得上原文' },
-      { n: 'W19', t: '向量化 + 检索', must: true,
-        goal: '输入一句话，能找回年报里意思最相近的几段',
-        do: ['选定向量接口并接入（Key 走环境变量）', '分批调用接口转向量（可选：CompletableFuture 并行几批）', '写入 PG：一个事务内先删旧块再写新块，成功后 MySQL 状态改就绪', '检索 SQL：先按代码+报告期过滤，再按相似度取前 5'],
-        know: ['向量相似度是什么（说人话版）', '跨库没有事务时怎么保证一致', 'CompletableFuture 和 Promise.all 的异同', 'pgvector 索引（数据量小时可以先不建）'],
-        check: '问"主要风险有哪些"，返回的 5 段确实都来自风险章节' },
-      { n: 'W20', t: 'RAG 问答：流式返回 + 引用出处', must: true,
-        goal: '问年报问题，答案逐字出来，并标出引自第几页',
-        do: ['检索结果拼进 prompt，要求只依据给定内容回答、答不上就说不知道', 'SseEmitter 流式返回', '数字类问题走 financial_report，文字类走 RAG（先用简单规则分流）', '问答记录落库（问题 / 命中块 / 模型 / prompt 版本 / token）'],
-        know: ['怎么压住 AI 编造', 'SSE 在 Spring 里的写法和超时', '为什么问答也要落库'],
-        check: '问 5 个问题：文字题答案带页码且能对上原文，数字题和结构化数据一致' },
+      { n: 'W17', t: '研究任务改成后台跑 + 进度推送', must: true,
+        goal: '提交问题立刻返回，页面实时看到任务走到哪一步',
+        do: ['状态机：排队 → 改写关键词 → 搜索 → 采集 → 判恰饭 → 提观点 → 汇总 → 完成/失败，失败可重试', '自定义线程池（七个参数每个都要能说出理由）', '采集一个视频就交给 AI，AI 调用同时跑 3–5 个', 'SseEmitter 推进度', '同一个问题同时提交两次只跑一次'],
+        know: ['线程池七参数与拒绝策略', '为什么不用 Executors 的快捷方法', '生产者/消费者', 'SSE 在 Spring 里的写法和超时'],
+        check: '提交问题后接口立刻返回，页面看到状态一步步变化' },
+      { n: 'W18', t: '提观点 + 汇总成报告', must: true,
+        goal: '⭐ 整条链路通了，能拿报告做决定',
+        do: ['每个非恰饭视频提一张观点卡（带时间点），按（视频, 问题指纹, prompt 版本）缓存', '几十张卡合并成报告：一句话结论、主流观点、点名产品、反对意见、排除的恰饭清单', '每条结论链接到 B 站视频的对应秒数', 'report 落库'],
+        know: ['长文本“先分后合”的处理方法', '多步 AI 流水线的失败处理', '怎么压住 AI 编造（要求必须引用）'],
+        check: '“什么枕头适合侧睡”5 分钟内出报告；抽 5 个被排除的视频，你认同至少 4 个' },
+      { n: 'W19', t: '字幕切块 + 向量化', must: true,
+        goal: '输入一句话，能从本次报告用到的视频里找回最相关的几段字幕',
+        do: ['docker compose 加 PostgreSQL + pgvector，建 subtitle_chunk 表', '字幕按时间段切块（相邻块重叠一点）', '选定向量接口并接入（Key 走环境变量）', '检索：先按本次任务的视频过滤，再按相似度取前 5'],
+        know: ['切块大小怎么影响检索效果', '多数据源配置（MySQL + PG）', '跨库没有事务时怎么保证一致', '向量相似度是什么（说人话版）'],
+        check: '问“有人提到颈椎吗”，返回的 5 段确实相关' },
+      { n: 'W20', t: '追问：流式回答 + 引用时间点', must: true,
+        goal: '在报告页继续问，答案逐字出来并标出处',
+        do: ['检索结果拼进 prompt，要求只依据给定字幕回答、答不上就说不知道', 'SseEmitter 流式返回', '追问记录落库（问题 / 命中块 / 模型 / prompt 版本 / token）'],
+        know: ['RAG 的基本流程', '为什么问答也要落库'],
+        check: '问 5 个问题，答案都带视频和时间点，点开能对上' },
       { n: 'W21', t: '测试补齐', must: true,
-        goal: '改代码后不靠手点 Postman 验证',
-        do: ['JUnit 5 单元测试（指标计算、切块逻辑）', 'MockMvc 测接口', 'Mock 掉 DeepSeek 和向量接口（不能每跑一次测试就花钱）', 'Testcontainers 或 H2 处理数据库依赖'],
+        goal: '改代码后不靠手点验证',
+        do: ['JUnit 5 单元测试（签名、限速、观点合并）', 'MockMvc 测接口', 'Mock 掉 B 站和 DeepSeek（测试不花钱、不发真请求）', 'Testcontainers 或 H2 处理数据库依赖'],
         know: ['为什么后端必须写测试（没有 HMR）', 'Mock 外部依赖的边界'],
-        check: 'mvn test 全绿，且不产生真实 API 调用' },
-      { n: 'W22', t: '前端看板 + 问答页', must: false,
+        check: 'mvn test 全绿，且不产生真实请求' },
+      { n: 'W22', t: '前端：提问 + 进度 + 报告 + 追问', must: false,
         goal: '有能演示的界面',
-        do: ['Vue3 + 你熟悉的组件库', '股票搜索 + 财报趋势图 + AI 报告展示', '年报问答页：流式显示 + 点页码看原文', '入库任务的进度展示'],
+        do: ['Vue3 + 你熟悉的组件库', '提问页 + 进度条（接 SSE）', '报告页：观点、产品、排除清单，点出处跳 B 站', '追问对话框（流式显示）'],
         know: ['这周是你的主场，重点是快'],
         check: '能截图放进简历/演示' },
       { n: 'W23', t: '容器化编排', must: true,
         goal: '一条命令起全套',
-        do: ['Java 服务 Dockerfile（多阶段构建）', 'docker compose 编排 Java + MySQL + PG + Redis + Python', '配置外部化（不同环境不同配置）', '数据卷持久化（含下载的 PDF 目录）'],
+        do: ['Java 服务 Dockerfile（多阶段构建）', 'docker compose 编排 Java + MySQL + PG + Redis', '配置外部化（本地/测试不同配置）', '数据卷持久化'],
         know: ['多阶段构建为什么能减小镜像', '容器间网络与服务发现'],
         check: 'docker compose up 之后系统完整可用' },
-      { n: 'W24', t: '部署上线拿公网 URL', must: true,
-        goal: '简历上能放一个能点开的链接',
-        do: ['买台便宜云服务器', '部署 + Nginx 反代 + 域名（可选）', '接口限流防刷', 'DeepSeek 和向量接口后台都设消费上限', '加免责声明'],
-        know: ['生产环境和本地的差异', '为什么要限流'],
-        check: '手机上能打开，生成一份报告并问一个年报问题' },
+      { n: 'W24', t: '本地一键启动 + 演示材料', must: true,
+        goal: '别人 clone 下来能跑，没有公网链接也能展示',
+        do: ['一键启动脚本 + .env 示例文件（不含真实密钥）', '演示数据：几个问题的报告提前生成好', '录一段演示视频代替公网链接', '加免责声明'],
+        know: ['配置外部化', '演示数据和真实数据隔离'],
+        check: '换一台电脑按 README 能跑起来，演示视频能放进简历' },
       { n: 'W25', t: '压测 + 一次真实排查', must: true,
         goal: '⭐ 产出一段能讲 3 分钟的排查故事',
-        do: ['用 wrk/JMeter 压测找瓶颈', '故意制造一次问题（连接池耗尽 / 慢 SQL / 大 PDF 撑爆内存）', '用 jstack / jmap / arthas 定位', '修复并记录前后数据', '写成 interview/ 文档'],
+        do: ['用 wrk/JMeter 压测查询和报告接口', '故意制造一次问题（连接池耗尽 / 慢 SQL / 线程池打满 / 大字幕撑爆内存）', '用 jstack / jmap / arthas 定位', '修复并记录前后数据', '写成 interview/ 文档'],
         know: ['CPU 飙高排查路径', 'OOM 定位方法', '连接池参数'],
-        check: 'interview/ 里有一篇完整的"现象→定位→根因→修复→验证"文档' },
+        check: 'interview/ 里有一篇完整的“现象→定位→根因→修复→验证”文档' },
       { n: 'W26', t: '收尾与复盘', must: true,
         goal: '项目能交付给别人看',
-        do: ['README：架构图 + 快速启动 + 技术选型理由', '接口文档（.http 文件或 Swagger）', '准备演示数据（几家公司的年报提前入库）', '写项目复盘：如果重做会怎么改'],
-        know: ['"如果重做会怎么改"是面试高频题，提前想'],
+        do: ['README：架构图 + 快速启动 + 技术选型理由', '接口文档（.http 文件或 Swagger）', '写项目复盘：如果重做会怎么改'],
+        know: ['“如果重做会怎么改”是面试高频题，提前想'],
         check: '别人 clone 下来能按 README 跑起来' },
     ]
   },
 ]
 
 const ALL_WEEKS = PHASES.flatMap(p => p.weeks)
-const WK_KEY = 'stockai-weeks-v1'
+const WK_KEY = 'biliscout-weeks-v1'
 const weeksBox = document.getElementById('weeksBox')
 const wkPct = document.getElementById('wkPct')
 const wkFill = document.getElementById('wkFill')
 const wkNow = document.getElementById('wkNow')
 
 let wkState = (() => { try { return JSON.parse(localStorage.getItem(WK_KEY)) || {} } catch (e) { return {} } })()
-// 首次打开：W1 已完成
-if (Object.keys(wkState).length === 0) { wkState = { W1: 1 } }
+// 首次打开：W1–W2 已完成
+if (Object.keys(wkState).length === 0) { wkState = { W1: 1, W2: 1 } }
 
 function saveWk() { try { localStorage.setItem(WK_KEY, JSON.stringify(wkState)) } catch (e) {} }
 
