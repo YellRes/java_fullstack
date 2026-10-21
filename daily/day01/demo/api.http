@@ -1,0 +1,34 @@
+### 创建 campaign
+GET http://localhost:8080/api/ping
+
+###
+POST http://localhost:8080/api/reports
+Content-Type: application/json
+
+{
+  "year": "2026",
+  "stock_Code": 5000,
+  "enabled": true
+}
+
+
+###
+POST http://localhost:8080/api/reports
+Content-Type: application/json
+
+{
+  "year": "abc",
+  "stockCode": '5000',
+  "revenue": true
+}
+
+###
+POST http://localhost:8080/api/reports
+Content-Type: application/json
+
+{
+  "year": 2026,
+  "stockCode": "5000",
+  "revenue": 199
+}
+

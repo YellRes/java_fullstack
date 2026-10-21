@@ -1,6 +1,7 @@
 package com.yellres.demo.controller;
 
 import java.util.Map;
+import com.yellres.demo.dto.ReportRequest;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,10 +16,8 @@ public class PingController {
     }
 
     @PostMapping("/api/reports")
-    public String createReport(
-        @RequestBody Map<String, Object> report) {
-            Object year = report.get("year");
-            return year.getClass().getSimpleName();
-            // return report;
+    public ReportRequest createReport(
+        @RequestBody ReportRequest report) {
+            return report;
     }
 }
