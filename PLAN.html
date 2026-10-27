@@ -197,8 +197,9 @@
   <a href="#flow">③ 一次查询怎么跑</a>
   <a href="#model">④ 数据模型</a>
   <a href="#weeks">⑤ 26 周计划</a>
-  <a href="#cut">⑥ 做不完怎么砍</a>
-  <a href="#risk">⑦ 合规与风险</a>
+  <a href="#basics">⑥ Java 基础穿插学</a>
+  <a href="#cut">⑦ 做不完怎么砍</a>
+  <a href="#risk">⑧ 合规与风险</a>
 </nav>
 
 <main>
@@ -356,8 +357,34 @@
 </section>
 
 <!-- ============================================ -->
+<section id="basics">
+  <h2><span class="num">6</span>Java 基础穿插学<span class="sub">— 2026-10-27 加入：基础不牢，只学 BiliScout 用得到的</span></h2>
+
+  <p><strong>节奏</strong>：每次先学一节基础，再马上用到当周的项目代码上（比如学完“异常”就去写全局异常处理）。不单独停下来啃教程。</p>
+  <p><strong>工具</strong>：用 JDK 自带的 <code>jshell</code>（Java 版浏览器控制台，终端输入 <code>jshell</code> 打开）做实验，每节配一道小练习。</p>
+
+  <table>
+    <thead><tr><th>#</th><th>内容</th><th>马上用在哪</th><th>状态</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td>类型、class / interface / record、继承（对比原型链）、Map、Optional、static、package / import、基本类型与包装类、小数精度</td><td>W3–W4 已写的实体和存储层接口</td><td>✅ 2026-10-27 复习，笔记见 <code>daily/2026-10-27.md</code></td></tr>
+      <tr><td>1</td><td>语法速通：变量和 <code>var</code>、<code>if</code>、新 <code>switch</code>、<code>for</code> 循环、String 常用方法、字符串比较用 <code>equals</code></td><td>W4 内存版存储、Service</td><td>⬜</td></tr>
+      <tr><td>2</td><td>集合：<code>List</code>、<code>Set</code>，对照 JS 数组和 Set</td><td>W4 查任务列表</td><td>⬜</td></tr>
+      <tr><td>3</td><td>泛型：<code>List&lt;T&gt;</code>、自己写 <code>Result&lt;T&gt;</code></td><td>W4 统一响应</td><td>⬜</td></tr>
+      <tr><td>4</td><td>异常：两种异常的区别、<code>try/catch/finally</code>、自定义异常</td><td>W4 全局异常处理</td><td>⬜</td></tr>
+      <tr><td>5</td><td>Lambda 和 Stream：<code>map</code> / <code>filter</code> / <code>collect</code>，对照 JS 数组方法</td><td>W4 起处理数据，几乎天天用</td><td>⬜</td></tr>
+      <tr><td>6</td><td>注解和反射：<code>@GetMapping</code> 这种“贴纸”是谁在读</td><td>理解 Spring；W14 事务自调用失效</td><td>⬜ 用到时学</td></tr>
+      <tr><td>7</td><td>多线程：线程、线程安全、<code>synchronized</code>、线程池</td><td>W17 后台任务</td><td>⬜ 用到时学</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warmbox">
+    <strong>代价</strong>：穿插学会让 W4 拉长到 1–2 周，后面的周次整体往后顺延。按 ⑦ 的原则，滑期时优先砍可砍项，不砍基础。
+  </div>
+</section>
+
+<!-- ============================================ -->
 <section id="cut">
-  <h2><span class="num">6</span>做不完怎么砍<span class="sub">— 计划一定会滑，提前定好优先级</span></h2>
+  <h2><span class="num">7</span>做不完怎么砍<span class="sub">— 计划一定会滑，提前定好优先级</span></h2>
 
   <p>每天 1 小时的计划，实际执行大概会滑 20–30%。<strong>关键不是不滑，是滑的时候砍对东西。</strong></p>
 
@@ -390,7 +417,7 @@
 
 <!-- ============================================ -->
 <section id="risk">
-  <h2><span class="num">7</span>合规与风险</h2>
+  <h2><span class="num">8</span>合规与风险</h2>
 
   <div class="pitfall">
     <strong>① 这是违反 B 站用户协议的自动化访问</strong>，即使不破解任何东西。

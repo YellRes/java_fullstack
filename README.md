@@ -9,11 +9,11 @@
 
 | 项 | 值 |
 |---|---|
-| 所处阶段 | **阶段 1 · 打通一条完整链路**（W3） |
+| 所处阶段 | **阶段 1 · 打通一条完整链路**（W4 三层分层，穿插学 Java 基础） |
 | 本阶段目标 | 输入关键词，30 个 B 站视频的详情、字幕、评论都进 MySQL（W7 验收） |
-| 连续天数 | 2 |
-| 累计投入 | 约 2h |
-| 下一个动作 | 新建 `biliscout/`（独立 git 仓库）→ docker compose 起 MySQL → 建 `research_task` 表做增删改查 |
+| 连续天数 | 1（10-21 起重新开始） |
+| 累计投入 | 约 __h（待自己填） |
+| 下一个动作 | Java 基础第 1 节「语法速通」（用 jshell）→ 写 `InMemoryResearchTaskRepository`（思路见 `daily/2026-10-27.md` 末尾） |
 
 **已建立的事实**（避免重复踩）：
 
@@ -22,6 +22,9 @@
 - 正式主线项目 **biliscout** W3 新建，放在本仓库的 `biliscout/` 目录但是独立 git 仓库（本仓库 `.gitignore` 忽略它），包名 `com.yellres.biliscout`。现在的 `demo` 只是阶段 0 练手，不用搬
 - 2026-10-21：主线从 StockAI 改为 BiliScout。旧计划留档在 [docs/archive/PLAN-stockai.html](docs/archive/PLAN-stockai.html)
 - Learning Playground（保存后自动验收 + 显示下一题）**暂缓**，构想见 `ideas/`
+- 公司电脑没有装 Docker / WSL 的权限：W3 的 MySQL 部分（docker compose、建表、MyBatis-Plus）换到自己电脑做；公司电脑上 W4 的存储层先用内存版（`InMemoryResearchTaskRepository`）
+- biliscout 用 Spring Boot **4.0.8** + `mybatis-plus-spring-boot4-starter` 3.5.17（它按 Boot 4.0.1 测试）。MyBatis-Plus 默认用雪花 id（19 位，超出 JS 安全整数），接入时改成数据库自增
+- 2026-10-27：Java 基础改为**穿插学**，每次先学一节再用到项目上，清单见 [PLAN.html ⑥](PLAN.html#basics)。做实验用 JDK 自带的 `jshell`
 
 ---
 
